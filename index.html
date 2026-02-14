@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0f1117">
-<title>論文ポモドーロ Pro</title>
+<title>Pomodoro for writers</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -109,7 +109,7 @@ nav button.active { color: var(--focus-color); }
 <div id="app">
   <header>
     <div>
-      <h1>論文ポモドーロ Pro</h1>
+      <h1>Pomodoro-for-writers</h1>
       <p>Academic Focus Timer</p>
       <div id="wakelock-msg" class="wakelock-status"></div>
     </div>
@@ -332,10 +332,10 @@ function showOverlay(note) {
   
   if (state.mode === 'focus') {
     title.textContent = "集中セッション完了";
-    sub.innerHTML = note ? `進捗: ${note}<br>しっかり休憩しましょう。` : "お疲れ様でした！";
+    sub.innerHTML = note ? `進捗: ${note}<br>一息ついてリフレッシュ！` : "お疲れ様でした！";
   } else {
     title.textContent = "休憩終了";
-    sub.textContent = "次の執筆セッションを始めましょう。";
+    sub.textContent = "休んだらもっと書きたくなった？";
   }
   ov.classList.add('show');
 }
