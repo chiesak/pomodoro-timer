@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Pomodoro-for-writers Pro</title>
+<title>Pomodoro-for-writers</title>
 <style>
 /* 既存のスタイルを継承しつつ、通知用の点滅アニメーションを追加 */
 :root {
@@ -38,7 +38,7 @@ nav button.active { color: var(--focus-color); }
 <div id="app">
   <header>
     <div>
-      <h1 id="main-title">論文ポモドーロ</h1>
+      <h1 id="main-title">Pomodoro-for-writers</h1>
       <div id="wakelock-status" style="font-size: 0.6rem; color: var(--break-color);"></div>
     </div>
     <div style="text-align: right;">
@@ -50,11 +50,11 @@ nav button.active { color: var(--focus-color); }
   <div id="content">
     <div id="page-timer">
       <div class="timer-section">
-        <div id="timer-mode" style="margin-bottom: 10px; font-weight: bold;">集中モード</div>
+        <div id="timer-mode" style="margin-bottom: 10px; font-weight: bold;">Focus mode</div>
         <div class="timer-display" id="timer-display">20:00</div>
         <div class="controls">
           <button class="btn btn-sub" onclick="resetTimer()">↺</button>
-          <button class="btn btn-main" id="btn-play" onclick="toggleTimer()">▶ スタート</button>
+          <button class="btn btn-main" id="btn-play" onclick="toggleTimer()">▶ Start</button>
           <button class="btn btn-sub" onclick="skipSession()">⏭</button>
         </div>
       </div>
@@ -62,12 +62,12 @@ nav button.active { color: var(--focus-color); }
       <div class="stats-section">
         <div style="display: flex; justify-content: space-around; text-align: center;">
           <div><div class="stat-num" id="stat-sessions">0</div><div>セッション</div></div>
-          <div><div class="stat-num" id="stat-chars">0</div><div>今日の文字数</div></div>
+          <div><div class="stat-num" id="stat-chars">0</div><div>words-letters-counts</div></div>
         </div>
       </div>
 
       <div class="history-section">
-        <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 10px;">本日の履歴</div>
+        <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 10px;">Today's counts</div>
         <div id="history-list"></div>
       </div>
     </div>
