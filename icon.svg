@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="40" fill="#0f1117"/>
+  <circle cx="96" cy="96" r="62" fill="none" stroke="#2a3050" stroke-width="10"/>
+  <circle cx="96" cy="96" r="62" fill="none" stroke="#e05a5a" stroke-width="10"
+    stroke-dasharray="195 195" stroke-dashoffset="49" stroke-linecap="round"
+    transform="rotate(-90 96 96)"/>
+  <text x="96" y="106" font-size="36" text-anchor="middle"
+    font-family="monospace" font-weight="bold" fill="#e8eaf0">⏱</text>
+</svg>

@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>論文ポモドーロ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1f2436;
+  --border: #2a3050;
+  --text: #e8eaf0;
+  --muted: #5a6080;
+  --focus-color: #e05a5a;
+  --break-color: #4ab89a;
+  --accent: #f0a04a;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; height: -webkit-fill-available;
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+#app {
+  display: flex; flex-direction: column;
+  height: 100%; height: -webkit-fill-available;
+}
+
+/* ヘッダー */
+header {
+  padding: calc(var(--safe-top) + 14px) 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+header h1 { font-size: 1rem; font-weight: 500; letter-spacing: 0.08em; }
+header p { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; }
+.header-stats {
+  display: flex; gap: 16px; align-items: center;
+}
+.hstat { text-align: right; }
+.hstat-val { font-family: 'DM Mono', monospace; font-size: 0.95rem; color: var(--accent); }
+.hstat-lbl { font-size: 0.58rem; color: var(--muted); }
+
+/* コンテンツ */
+#content {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 0 0 calc(var(--safe-bottom) + 70px);
+}
+
+/* タイマーセクション */
+.timer-section {
+  padding: 28px 20px 20px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* モードバッジ */
+.mode-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px; border-radius: 20px; font-size: 0.72rem;
+  font-weight: 500; letter-spacing: 0.08em;
+  margin-bottom: 24px; transition: all 0.4s;
+}
+.mode-badge.focus { background: rgba(224,90,90,0.15); color: var(--focus-color); border: 1px solid rgba(224,90,90,0.3); }
+.mode-badge.break { background: rgba(74,184,154,0.15); color: var(--break-color); border: 1px solid rgba(74,184,154,0.3); }
+.mode-dot { width: 6px; height: 6px; border-radius: 50%; }
+.focus .mode-dot { background: var(--focus-color); box-shadow: 0 0 6px var(--focus-color); }
+.break .mode-dot { background: var(--break-color); box-shadow: 0 0 6px var(--break-color); }
+
+/* リングタイマー */
+.ring-wrap { position: relative; width: 220px; height: 220px; margin-bottom: 28px; }
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--surface2); stroke-width: 10; }
+.ring-progress {
+  fill: none; stroke-width: 10; stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.4s;
+}
+.ring-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); text-align: center;
+}
+.timer-display {
+  font-family: 'DM Mono', monospace;
+  font-size: 3.2rem; font-weight: 500; line-height: 1;
+  letter-spacing: 0.02em;
+  transition: color 0.4s;
+}
+.timer-session {
+  font-size: 0.7rem; color: var(--muted); margin-top: 6px;
+  letter-spacing: 0.1em;
+}
+
+/* コントロールボタン */
+.controls { display: flex; gap: 14px; align-items: center; margin-bottom: 24px; }
+
+.btn-main {
+  width: 68px; height: 68px; border-radius: 50%;
+  border: none; cursor: pointer;
+  font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+}
+.btn-main:active { transform: scale(0.93); }
+.btn-main.focus-btn { background: var(--focus-color); box-shadow: 0 0 20px rgba(224,90,90,0.35); }
+.btn-main.break-btn { background: var(--break-color); box-shadow: 0 0 20px rgba(74,184,154,0.35); }
+.btn-main.paused { background: var(--surface2); border: 1px solid var(--border); box-shadow: none; }
+
+.btn-sub {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--muted); font-size: 1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; -webkit-appearance: none;
+}
+.btn-sub:active { opacity: 0.6; }
+
+/* セッションドット */
+.session-dots { display: flex; gap: 8px; margin-bottom: 8px; }
+.sdot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.sdot.done { background: var(--focus-color); border-color: var(--focus-color); box-shadow: 0 0 5px rgba(224,90,90,0.5); }
+.sdot.active { background: transparent; border-color: var(--focus-color); animation: pulse-dot 1.2s infinite; }
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224,90,90,0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(224,90,90,0); }
+}
+
+/* 今日の統計 */
+.stats-section {
+  margin: 0 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.stats-title {
+  font-size: 0.68rem; color: var(--muted); letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.stat-item { text-align: center; }
+.stat-num {
+  font-family: 'DM Mono', monospace; font-size: 1.4rem;
+  color: var(--text); line-height: 1;
+}
+.stat-num.focus-col { color: var(--focus-color); }
+.stat-num.break-col { color: var(--break-color); }
+.stat-num.acc-col { color: var(--accent); }
+.stat-label { font-size: 0.6rem; color: var(--muted); margin-top: 3px; }
+
+/* 履歴 */
+.history-section {
+  margin: 0 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.history-title {
+  font-size: 0.68rem; color: var(--muted); letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.history-list { max-height: 200px; overflow-y: auto; }
+.history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.history-item:last-child { border-bottom: none; }
+.h-badge {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+.h-badge.focus { background: var(--focus-color); }
+.h-badge.break { background: var(--break-color); }
+.h-time { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.7rem; min-width: 40px; }
+.h-label { flex: 1; color: var(--text); }
+.h-dur { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+
+/* 設定パネル */
+.settings-section {
+  margin: 0 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.settings-title {
+  font-size: 0.68rem; color: var(--muted); letter-spacing: 0.12em;
+  text-transform: uppercase; margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-lbl { font-size: 0.82rem; color: var(--text); }
+.setting-sub { font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+.stepper {
+  display: flex; align-items: center; gap: 10px;
+}
+.step-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-appearance: none; transition: opacity 0.15s;
+}
+.step-btn:active { opacity: 0.6; }
+.step-val {
+  font-family: 'DM Mono', monospace; font-size: 0.95rem;
+  min-width: 36px; text-align: center; color: var(--accent);
+}
+
+/* ボトムナビ */
+nav {
+  display: flex; background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom);
+  flex-shrink: 0;
+}
+nav button {
+  flex: 1; padding: 10px 4px 8px;
+  background: none; border: none;
+  color: var(--muted); font-family: 'Noto Sans JP', sans-serif;
+  font-size: 0.6rem; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: color 0.2s; -webkit-appearance: none;
+}
+.nav-icon { font-size: 1.2rem; line-height: 1; }
+nav button.active { color: var(--focus-color); }
+
+/* ページ */
+.page { display: none; }
+.page.active { display: block; }
+
+/* 完了オーバーレイ */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85); z-index: 200;
+  align-items: center; justify-content: center; flex-direction: column;
+  text-align: center; padding: 30px;
+}
+.overlay.show { display: flex; }
+.overlay-icon { font-size: 3.5rem; margin-bottom: 16px; }
+.overlay-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+.overlay-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 28px; line-height: 1.7; }
+.overlay-btn {
+  padding: 14px 36px; border-radius: 30px; border: none;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 0.95rem;
+  cursor: pointer; font-weight: 500; -webkit-appearance: none;
+  transition: opacity 0.15s;
+}
+.overlay-btn:active { opacity: 0.75; }
+.overlay-btn.focus-next { background: var(--focus-color); color: white; }
+.overlay-btn.break-next { background: var(--break-color); color: white; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <h1>論文ポモドーロ</h1>
+      <p>Academic Focus Timer</p>
+    </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-val" id="h-today-sessions">0</div>
+        <div class="hstat-lbl">今日のセッション</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-val" id="h-today-time">0h 0m</div>
+        <div class="hstat-lbl">集中時間</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <!-- タイマーページ -->
+    <div id="page-timer" class="page active">
+      <div class="timer-section">
+        <div class="mode-badge focus" id="mode-badge">
+          <span class="mode-dot"></span>
+          <span id="mode-label">集中</span>
+        </div>
+
+        <div class="ring-wrap">
+          <svg width="220" height="220" viewBox="0 0 220 220">
+            <circle class="ring-track" cx="110" cy="110" r="100"/>
+            <circle class="ring-progress" id="ring-progress"
+              cx="110" cy="110" r="100"
+              stroke-dasharray="628.3"
+              stroke-dashoffset="0"
+              stroke="var(--focus-color)"/>
+          </svg>
+          <div class="ring-center">
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-session" id="timer-session">セッション 1 / 4</div>
+          </div>
+        </div>
+
+        <div class="session-dots" id="session-dots"></div>
+
+        <div class="controls">
+          <button class="btn-sub" id="btn-reset" onclick="resetTimer()" title="リセット">↺</button>
+          <button class="btn-main focus-btn paused" id="btn-play" onclick="toggleTimer()">▶</button>
+          <button class="btn-sub" id="btn-skip" onclick="skipSession()" title="スキップ">⏭</button>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <div class="stats-title">今日の記録</div>
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-num focus-col" id="stat-focus-sessions">0</div>
+            <div class="stat-label">集中セッション</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num acc-col" id="stat-focus-time">0分</div>
+            <div class="stat-label">集中時間</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-num break-col" id="stat-streak">0</div>
+            <div class="stat-label">連続日数</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="history-section">
+        <div class="history-title">本日の履歴</div>
+        <div class="history-list" id="history-list">
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:0.78rem;">まだ記録がありません</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定ページ -->
+    <div id="page-settings" class="page">
+      <div style="padding: 16px 16px 0;">
+        <div class="settings-section">
+          <div class="settings-title">タイマー設定</div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-lbl">集中時間</div>
+              <div class="setting-sub">1セッションの長さ</div>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" onclick="adjustSetting('focus', -5)">−</button>
+              <div class="step-val" id="set-focus">25分</div>
+              <button class="step-btn" onclick="adjustSetting('focus', 5)">＋</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-lbl">短い休憩</div>
+              <div class="setting-sub">セッション間の休憩</div>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" onclick="adjustSetting('shortBreak', -1)">−</button>
+              <div class="step-val" id="set-short">5分</div>
+              <button class="step-btn" onclick="adjustSetting('shortBreak', 1)">＋</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-lbl">長い休憩</div>
+              <div class="setting-sub">4セッション後の休憩</div>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" onclick="adjustSetting('longBreak', -5)">−</button>
+              <div class="step-val" id="set-long">20分</div>
+              <button class="step-btn" onclick="adjustSetting('longBreak', 5)">＋</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-lbl">1セットのセッション数</div>
+              <div class="setting-sub">長い休憩までの回数</div>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" onclick="adjustSetting('sessionsPerSet', -1)">−</button>
+              <div class="step-val" id="set-sessions">4回</div>
+              <button class="step-btn" onclick="adjustSetting('sessionsPerSet', 1)">＋</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-lbl">1日の目標セッション数</div>
+              <div class="setting-sub">達成するとバッジ表示</div>
+            </div>
+            <div class="stepper">
+              <button class="step-btn" onclick="adjustSetting('dailyGoal', -1)">−</button>
+              <div class="step-val" id="set-goal">8回</div>
+              <button class="step-btn" onclick="adjustSetting('dailyGoal', 1)">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">データ管理</div>
+          <div class="setting-row">
+            <div class="setting-lbl">今日の記録をリセット</div>
+            <button onclick="resetToday()" style="padding:7px 14px; border-radius:4px; border:1px solid var(--focus-color); background:transparent; color:var(--focus-color); font-family:'Noto Sans JP',sans-serif; font-size:0.78rem; cursor:pointer;">リセット</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <nav>
+    <button class="active" onclick="showPage('timer', this)">
+      <span class="nav-icon">⏱</span>タイマー
+    </button>
+    <button onclick="showPage('settings', this)">
+      <span class="nav-icon">⚙️</span>設定
+    </button>
+  </nav>
+</div>
+
+<!-- 完了オーバーレイ -->
+<div class="overlay" id="overlay">
+  <div class="overlay-icon" id="overlay-icon">🎯</div>
+  <div class="overlay-title" id="overlay-title">集中セッション完了！</div>
+  <div class="overlay-sub" id="overlay-sub">お疲れ様でした。<br>5分間休憩しましょう。</div>
+  <button class="overlay-btn focus-next" id="overlay-btn" onclick="startNext()">次へ進む</button>
+</div>
+
+<script>
+// ===== データ =====
+const DEFAULT_SETTINGS = { focus: 25, shortBreak: 5, longBreak: 20, sessionsPerSet: 4, dailyGoal: 8 };
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem('pomodoro_v1') || 'null') || { settings: {...DEFAULT_SETTINGS}, days: {} }; }
+  catch(e) { return { settings: {...DEFAULT_SETTINGS}, days: {} }; }
+}
+function saveData(d) { localStorage.setItem('pomodoro_v1', JSON.stringify(d)); }
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function todayData() {
+  const d = getData(); const t = today();
+  if (!d.days[t]) d.days[t] = { sessions: [], focusCount: 0, focusMinutes: 0 };
+  return { data: d, day: d.days[t] };
+}
+
+// ===== タイマー状態 =====
+let settings = getData().settings;
+let state = {
+  mode: 'focus',       // 'focus' | 'shortBreak' | 'longBreak'
+  running: false,
+  sessionInSet: 1,     // 現在のセッション番号（セット内）
+  totalToday: 0,       // 今日の完了セッション数
+  remaining: settings.focus * 60,
+  total: settings.focus * 60,
+  intervalId: null,
+};
+
+// ===== 音 =====
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = type === 'focus'
+      ? [{ f: 523, t: 0, d: 0.15 }, { f: 659, t: 0.18, d: 0.15 }, { f: 784, t: 0.36, d: 0.3 }]
+      : [{ f: 784, t: 0, d: 0.15 }, { f: 659, t: 0.18, d: 0.15 }, { f: 523, t: 0.36, d: 0.3 }];
+    notes.forEach(({ f, t, d }) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(0, ctx.currentTime + t);
+      g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + t + 0.02);
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + t + d);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + d + 0.05);
+    });
+  } catch(e) {}
+}
+
+// ===== UI更新 =====
+function updateDisplay() {
+  const m = Math.floor(state.remaining / 60).toString().padStart(2, '0');
+  const s = (state.remaining % 60).toString().padStart(2, '0');
+  document.getElementById('timer-display').textContent = `${m}:${s}`;
+  document.getElementById('timer-display').style.color =
+    state.mode === 'focus' ? 'var(--focus-color)' : 'var(--break-color)';
+
+  // リング
+  const circ = 2 * Math.PI * 100;
+  const offset = circ * (1 - state.remaining / state.total);
+  const ring = document.getElementById('ring-progress');
+  ring.style.strokeDashoffset = offset;
+  ring.style.stroke = state.mode === 'focus' ? 'var(--focus-color)' : 'var(--break-color)';
+
+  // モードバッジ
+  const badge = document.getElementById('mode-badge');
+  badge.className = 'mode-badge ' + (state.mode === 'focus' ? 'focus' : 'break');
+  document.getElementById('mode-label').textContent =
+    state.mode === 'focus' ? '集中' : state.mode === 'shortBreak' ? '短い休憩' : '長い休憩';
+
+  // セッション表示
+  document.getElementById('timer-session').textContent =
+    state.mode === 'focus'
+      ? `セッション ${state.sessionInSet} / ${settings.sessionsPerSet}`
+      : state.mode === 'longBreak' ? '長い休憩' : '短い休憩';
+
+  // プレイボタン
+  const btn = document.getElementById('btn-play');
+  btn.textContent = state.running ? '⏸' : '▶';
+  btn.className = 'btn-main ' + (state.mode === 'focus' ? 'focus-btn' : 'break-btn') + (state.running ? '' : ' paused');
+
+  // ドット
+  updateDots();
+  updateStats();
+}
+
+function updateDots() {
+  const el = document.getElementById('session-dots');
+  el.innerHTML = '';
+  for (let i = 1; i <= settings.sessionsPerSet; i++) {
+    const d = document.createElement('div');
+    d.className = 'sdot' +
+      (i < state.sessionInSet ? ' done' :
+       i === state.sessionInSet && state.mode === 'focus' ? ' active' : '');
+    el.appendChild(d);
+  }
+}
+
+function updateStats() {
+  const { day } = todayData();
+  const focusMins = day.focusMinutes || 0;
+  const h = Math.floor(focusMins / 60), m = focusMins % 60;
+
+  document.getElementById('stat-focus-sessions').textContent = day.focusCount || 0;
+  document.getElementById('stat-focus-time').textContent = focusMins >= 60 ? `${h}h${m}m` : `${focusMins}分`;
+  document.getElementById('h-today-sessions').textContent = day.focusCount || 0;
+  document.getElementById('h-today-time').textContent = focusMins >= 60 ? `${h}h${m}m` : `${focusMins}分`;
+
+  // 連続日数
+  const data = getData();
+  let streak = 0;
+  const now = new Date(); now.setHours(0,0,0,0);
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    if (data.days[key] && data.days[key].focusCount > 0) streak++;
+    else break;
+  }
+  document.getElementById('stat-streak').textContent = streak;
+
+  // 履歴
+  renderHistory(day.sessions || []);
+}
+
+function renderHistory(sessions) {
+  const el = document.getElementById('history-list');
+  if (!sessions.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.78rem;">まだ記録がありません</div>';
+    return;
+  }
+  el.innerHTML = [...sessions].reverse().map(s => `
+    <div class="history-item">
+      <div class="h-badge ${s.type}"></div>
+      <div class="h-time">${s.time}</div>
+      <div class="h-label">${s.type === 'focus' ? '🎯 集中' : s.type === 'shortBreak' ? '☕ 短い休憩' : '🌿 長い休憩'}</div>
+      <div class="h-dur">${s.minutes}分</div>
+    </div>`).join('');
+}
+
+// ===== タイマー制御 =====
+function toggleTimer() {
+  if (state.running) {
+    clearInterval(state.intervalId);
+    state.running = false;
+  } else {
+    state.running = true;
+    state.intervalId = setInterval(tick, 1000);
+  }
+  updateDisplay();
+}
+
+function tick() {
+  if (state.remaining <= 0) {
+    completeSession();
+    return;
+  }
+  state.remaining--;
+  updateDisplay();
+}
+
+function completeSession() {
+  clearInterval(state.intervalId);
+  state.running = false;
+  playSound(state.mode === 'focus' ? 'break' : 'focus');
+
+  // 記録
+  const { data, day } = todayData();
+  const now = new Date();
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  const minutes = state.mode === 'focus' ? settings.focus
+    : state.mode === 'shortBreak' ? settings.shortBreak : settings.longBreak;
+
+  day.sessions.push({ type: state.mode, time: timeStr, minutes });
+  if (state.mode === 'focus') {
+    day.focusCount = (day.focusCount || 0) + 1;
+    day.focusMinutes = (day.focusMinutes || 0) + minutes;
+  }
+  saveData(data);
+
+  // オーバーレイ表示
+  showOverlay();
+}
+
+function showOverlay() {
+  const overlay = document.getElementById('overlay');
+  const icon = document.getElementById('overlay-icon');
+  const title = document.getElementById('overlay-title');
+  const sub = document.getElementById('overlay-sub');
+  const btn = document.getElementById('overlay-btn');
+
+  if (state.mode === 'focus') {
+    const isLong = state.sessionInSet >= settings.sessionsPerSet;
+    icon.textContent = '🎯';
+    title.textContent = '集中セッション完了！';
+    sub.textContent = isLong
+      ? `${settings.sessionsPerSet}セッション達成！\n${settings.longBreak}分の長い休憩をとりましょう。`
+      : `お疲れ様でした。\n${settings.shortBreak}分間休憩しましょう。`;
+    btn.textContent = isLong ? `${settings.longBreak}分休憩する` : `${settings.shortBreak}分休憩する`;
+    btn.className = 'overlay-btn break-next';
+  } else {
+    icon.textContent = state.mode === 'longBreak' ? '✨' : '☕';
+    title.textContent = '休憩終了！';
+    sub.textContent = '集中モードに切り替えましょう。\n準備ができたらスタート！';
+    btn.textContent = `${settings.focus}分集中する`;
+    btn.className = 'overlay-btn focus-next';
+  }
+  overlay.classList.add('show');
+}
+
+function startNext() {
+  document.getElementById('overlay').classList.remove('show');
+  if (state.mode === 'focus') {
+    const isLong = state.sessionInSet >= settings.sessionsPerSet;
+    state.mode = isLong ? 'longBreak' : 'shortBreak';
+    state.remaining = (isLong ? settings.longBreak : settings.shortBreak) * 60;
+    state.total = state.remaining;
+  } else {
+    if (state.mode === 'longBreak') state.sessionInSet = 1;
+    else state.sessionInSet = Math.min(state.sessionInSet + 1, settings.sessionsPerSet);
+    state.mode = 'focus';
+    state.remaining = settings.focus * 60;
+    state.total = state.remaining;
+  }
+  updateDisplay();
+  toggleTimer(); // 自動スタート
+}
+
+function resetTimer() {
+  clearInterval(state.intervalId);
+  state.running = false;
+  state.remaining = (state.mode === 'focus' ? settings.focus
+    : state.mode === 'shortBreak' ? settings.shortBreak : settings.longBreak) * 60;
+  state.total = state.remaining;
+  updateDisplay();
+}
+
+function skipSession() {
+  if (!confirm('現在のセッションをスキップしますか？')) return;
+  clearInterval(state.intervalId);
+  state.running = false;
+  if (state.mode === 'focus') {
+    state.mode = state.sessionInSet >= settings.sessionsPerSet ? 'longBreak' : 'shortBreak';
+    state.remaining = (state.mode === 'longBreak' ? settings.longBreak : settings.shortBreak) * 60;
+  } else {
+    if (state.mode === 'longBreak') state.sessionInSet = 1;
+    else state.sessionInSet = Math.min(state.sessionInSet + 1, settings.sessionsPerSet);
+    state.mode = 'focus';
+    state.remaining = settings.focus * 60;
+  }
+  state.total = state.remaining;
+  updateDisplay();
+}
+
+// ===== 設定 =====
+const SETTING_LIMITS = {
+  focus: [5, 90], shortBreak: [1, 30], longBreak: [5, 60],
+  sessionsPerSet: [2, 8], dailyGoal: [1, 20]
+};
+
+function adjustSetting(key, delta) {
+  const [min, max] = SETTING_LIMITS[key];
+  settings[key] = Math.max(min, Math.min(max, settings[key] + delta));
+  const data = getData(); data.settings = settings; saveData(data);
+  updateSettingsUI();
+  // タイマーが動いていなければ残り時間も更新
+  if (!state.running && state.mode === 'focus' && key === 'focus') {
+    state.remaining = settings.focus * 60;
+    state.total = state.remaining;
+    updateDisplay();
+  }
+}
+
+function updateSettingsUI() {
+  document.getElementById('set-focus').textContent = settings.focus + '分';
+  document.getElementById('set-short').textContent = settings.shortBreak + '分';
+  document.getElementById('set-long').textContent = settings.longBreak + '分';
+  document.getElementById('set-sessions').textContent = settings.sessionsPerSet + '回';
+  document.getElementById('set-goal').textContent = settings.dailyGoal + '回';
+}
+
+function resetToday() {
+  if (!confirm('今日の記録をすべてリセットしますか？')) return;
+  const data = getData();
+  data.days[today()] = { sessions: [], focusCount: 0, focusMinutes: 0 };
+  saveData(data);
+  updateDisplay();
+}
+
+// ===== ページ切替 =====
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ===== 初期化 =====
+(function init() {
+  settings = getData().settings;
+  state.remaining = settings.focus * 60;
+  state.total = settings.focus * 60;
+  updateSettingsUI();
+  updateDisplay();
+})();
+
+// ===== Service Worker =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ===== インストール案内 =====
+(function showInstallTip() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  if (!isIOS && !isAndroid) return;
+  const tip = document.createElement('div');
+  tip.style.cssText = 'margin:12px 16px 0; padding:11px 14px; background:#1f2436; border:1px solid #f0a04a44; border-radius:8px; font-size:0.74rem; color:#a0a8c0; line-height:1.7;';
+  tip.innerHTML = isIOS
+    ? '<strong style="color:#f0a04a;display:block;margin-bottom:2px;">📱 ホーム画面に追加できます</strong>Safariの共有ボタン（↑）→「ホーム画面に追加」'
+    : '<strong style="color:#f0a04a;display:block;margin-bottom:2px;">📱 ホーム画面に追加できます</strong>Chromeのメニュー（⋮）→「ホーム画面に追加」';
+  const content = document.getElementById('content');
+  content.insertBefore(tip, content.firstChild);
+})();
+</script>
+</body>
+</html>
