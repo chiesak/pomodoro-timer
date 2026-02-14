@@ -1,7 +1,7 @@
 {
-  "name": "論文ポモドーロ",
-  "short_name": "ポモドーロ",
-  "description": "論文執筆のための集中タイマー",
+  "name": "Pomowrite",
+  "short_name": "Pomodoro",
+  "description": "Stay-forcused-while-writing",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f1117",
