@@ -1,6 +1,6 @@
 {
-  "name": "Pomowrite",
-  "short_name": "Pomodoro",
+  "name": "Pomodoro-for-writing",
+  "short_name": "Pomowrite",
   "description": "Stay-forcused-while-writing",
   "start_url": "./index.html",
   "display": "standalone",
