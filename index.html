@@ -17,7 +17,7 @@ h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
 #content { height: calc(100% - 170px); overflow-y: auto; padding: 20px; }
 .view { display: none; opacity: 0; }
 .view.active { display: block; opacity: 1; }
-.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
+.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 20px; text-align: center; margin-bottom: 20px; transition: background 0.3s; }
 .mode-status { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-sub); margin-bottom: 10px; }
 .timer-display { font-family: 'JetBrains Mono', monospace; font-size: 4.2rem; font-weight: 500; margin: 10px 0 30px; }
 .controls { display: flex; justify-content: center; align-items: center; gap: 25px; }
@@ -27,17 +27,18 @@ h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; }
 .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; display: block; }
 .stat-lbl { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; margin-top: 5px; }
-.settings-list { background: var(--surface); border-radius: 15px; border: 1px solid var(--border); overflow: hidden; }
-.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid var(--border); }
-.input-num { background: #000; border: 1px solid var(--border); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; width: 80px; text-align: center; padding: 10px; border-radius: 8px; }
 nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 999; }
 nav button { background: none; border: none; color: var(--text-sub); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; width: 50%; cursor: pointer; }
 nav button.active { color: var(--accent); font-weight: 600; }
 .flash-red { animation: flash 0.5s infinite; }
-@keyframes flash { 0% { background: var(--surface); } 50% { background: #401010; } 100% { background: var(--surface); } }
+@keyframes flash { 0% { background: var(--surface); } 50% { background: #4a1515; } 100% { background: var(--surface); } }
 </style>
 </head>
 <body>
+
+<audio id="alarm-sound" preload="auto">
+  <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//MQZAAAAAGkAAAAAAAAAExhdmY1OC43Ni4xMDD/8xBkYAAAAA8AAAAAAAABNlAABAAAANlAABAAAA//MQZIAAAAAPAAAAAAAAA2UAAEAAAANlAABAAAA//MQZNAAAAAPAAAAAAAAA2UAAEAAAANlAABAAAAP/zEGTQAAAADwAAAAAAAA2UAAEAAAANlAABAAAA" type="audio/mpeg">
+</audio>
 
 <header>
   <h1>Pomodoro-for-writers</h1>
@@ -65,9 +66,13 @@ nav button.active { color: var(--accent); font-weight: 600; }
   </div>
 
   <div id="view-settings" class="view">
-    <div class="settings-list">
-      <div class="setting-row"><span>Focus (min)</span><input type="number" pattern="\d*" class="input-num" id="set-focus" oninput="saveSettings()"></div>
-      <div class="setting-row"><span>Break (min)</span><input type="number" pattern="\d*" class="input-num" id="set-break" oninput="saveSettings()"></div>
+    <div style="background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; padding:20px; border-bottom:1px solid var(--border);">
+        <span>Focus (min)</span><input type="number" pattern="\d*" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; border-radius:8px;" id="set-focus" oninput="saveSettings()">
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:20px;">
+        <span>Break (min)</span><input type="number" pattern="\d*" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; border-radius:8px;" id="set-break" oninput="saveSettings()">
+      </div>
     </div>
   </div>
 </div>
@@ -78,8 +83,9 @@ nav button.active { color: var(--accent); font-weight: 600; }
 </nav>
 
 <script>
-let data = JSON.parse(localStorage.getItem('pomowriters_v6') || '{"settings":{"focus":20,"break":5},"days":{}}');
-let state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, audioCtx: null, startCount: 0 };
+let data = JSON.parse(localStorage.getItem('pomowriters_v8') || '{"settings":{"focus":20,"break":5},"days":{}}');
+let state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, startCount: 0 };
+const alarm = document.getElementById('alarm-sound');
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
@@ -96,51 +102,20 @@ function updateUI() {
   document.getElementById('total-chars').textContent = total.toLocaleString();
 }
 
-function switchView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'settings') {
-    document.getElementById('set-focus').value = data.settings.focus;
-    document.getElementById('set-break').value = data.settings.break;
-  }
-}
-
-function saveSettings() {
-  const f = parseInt(document.getElementById('set-focus').value);
-  const b = parseInt(document.getElementById('set-break').value);
-  if (f > 0) data.settings.focus = f;
-  if (b > 0) data.settings.break = b;
-  localStorage.setItem('pomowriters_v6', JSON.stringify(data));
-  if (!state.running) resetTimer();
-}
-
-// ユーザーのアクションでオーディオを「ロック解除」
-function unlockAudio() {
-  if (!state.audioCtx) {
-    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // iOS/Safari対策: 無音を再生
-    const buffer = state.audioCtx.createBuffer(1, 1, 22050);
-    const source = state.audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(state.audioCtx.destination);
-    source.start(0);
-  }
-  if (state.audioCtx.state === 'suspended') {
-    state.audioCtx.resume();
-  }
-}
-
 function handlePlay() {
-  unlockAudio(); // タップ時にオーディオを有効化
+  // 再生ボタン押下時に音源を「アクティブ」にする（ブラウザ制限解除）
+  alarm.play().then(() => {
+      alarm.pause();
+      alarm.currentTime = 0;
+  }).catch(() => {});
+
   if (state.running) {
     toggleTimer();
   } else {
     if (state.mode === 'focus') {
-      const val = prompt("Writing Start - Current character count:", state.startCount || "0");
-      if (val === null) return; // キャンセル
-      state.startCount = parseInt(val) || 0;
+      const val = prompt("Writing Start - Character count:", "");
+      if (val === null) return;
+      state.startCount = (val === "") ? state.startCount : (parseInt(val) || 0);
     }
     toggleTimer();
   }
@@ -170,32 +145,22 @@ function tick() {
   }
 }
 
-function playAlarm() {
-  if (!state.audioCtx) return;
-  const osc = state.audioCtx.createOscillator();
-  const gain = state.audioCtx.createGain();
-  osc.connect(gain); gain.connect(state.audioCtx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(880, state.audioCtx.currentTime);
-  gain.gain.setValueAtTime(0, state.audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.3, state.audioCtx.currentTime + 0.1);
-  gain.gain.exponentialRampToValueAtTime(0.01, state.audioCtx.currentTime + 2);
-  osc.start(); osc.stop(state.audioCtx.currentTime + 2);
-}
-
 function complete() {
   state.running = false;
   clearInterval(state.timerId);
-  playAlarm(); // ここで鳴るはず
+  
+  // アラーム再生
+  alarm.play().catch(e => console.log("Audio failed", e));
   document.getElementById('timer-card').classList.add('flash-red');
 
   setTimeout(() => {
     let charDiff = 0;
     if (state.mode === 'focus') {
-      const e = prompt("Time up! Writing End - Current character count:", state.startCount);
-      const endCount = parseInt(e) || state.startCount;
+      // 終了時入力欄を完全に空欄にする
+      const e = prompt("Time up! End Chars:", "");
+      const endCount = (e === null || e === "") ? state.startCount : (parseInt(e) || state.startCount);
       charDiff = endCount - state.startCount;
-      state.startCount = endCount; // 次回のために保持
+      state.startCount = endCount; 
     } else {
       alert("Break finished.");
     }
@@ -206,7 +171,7 @@ function complete() {
       data.days[tk].sessions++;
       data.days[tk].chars += Math.max(0, charDiff);
     }
-    localStorage.setItem('pomowriters_v6', JSON.stringify(data));
+    localStorage.setItem('pomowriters_v8', JSON.stringify(data));
     
     state.mode = (state.mode === 'focus') ? 'break' : 'focus';
     state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
@@ -215,6 +180,26 @@ function complete() {
     document.getElementById('timer-card').classList.remove('flash-red');
     updateUI();
   }, 500);
+}
+
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'settings') {
+    document.getElementById('set-focus').value = data.settings.focus;
+    document.getElementById('set-break').value = data.settings.break;
+  }
+}
+
+function saveSettings() {
+  const f = parseInt(document.getElementById('set-focus').value);
+  const b = parseInt(document.getElementById('set-break').value);
+  if (f > 0) data.settings.focus = f;
+  if (b > 0) data.settings.break = b;
+  localStorage.setItem('pomowriters_v8', JSON.stringify(data));
+  if (!state.running) resetTimer();
 }
 
 function resetTimer() {
