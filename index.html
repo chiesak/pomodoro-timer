@@ -36,10 +36,6 @@ nav button.active { color: var(--accent); font-weight: 600; }
 </head>
 <body>
 
-<audio id="alarm-sound" preload="auto">
-  <source src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//MQZAAAAAGkAAAAAAAAAExhdmY1OC43Ni4xMDD/8xBkYAAAAA8AAAAAAAABNlAABAAAANlAABAAAA//MQZIAAAAAPAAAAAAAAA2UAAEAAAANlAABAAAA//MQZNAAAAAPAAAAAAAAA2UAAEAAAANlAABAAAAP/zEGTQAAAADwAAAAAAAA2UAAEAAAANlAABAAAA" type="audio/mpeg">
-</audio>
-
 <header>
   <h1>Pomodoro-for-writers</h1>
   <div style="text-align: right;">
@@ -83,37 +79,38 @@ nav button.active { color: var(--accent); font-weight: 600; }
 </nav>
 
 <script>
-let data = JSON.parse(localStorage.getItem('pomowriters_v8') || '{"settings":{"focus":20,"break":5},"days":{}}');
+// バージョンを更新して古いキャッシュ干渉を防ぐ
+let data = JSON.parse(localStorage.getItem('pomowriters_v9') || '{"settings":{"focus":20,"break":5},"days":{}}');
 let state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, startCount: 0 };
-const alarm = document.getElementById('alarm-sound');
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
+// UIと累計計算の同期を確実にする関数
 function updateUI() {
   const m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
   const s = (state.timeLeft % 60).toString().padStart(2, '0');
   document.getElementById('timer-display').textContent = `${m}:${s}`;
+  
   const tk = todayKey();
   const day = data.days[tk] || { sessions: 0, chars: 0 };
+  
   document.getElementById('today-sessions').textContent = day.sessions;
-  document.getElementById('today-chars').textContent = day.chars;
-  let total = 0;
-  Object.values(data.days).forEach(d => total += (d.chars || 0));
-  document.getElementById('total-chars').textContent = total.toLocaleString();
+  document.getElementById('today-chars').textContent = day.chars.toLocaleString();
+  
+  // すべての日の合計を再計算して確実に反映
+  let totalAcrossAllDays = 0;
+  for (let key in data.days) {
+    totalAcrossAllDays += (data.days[key].chars || 0);
+  }
+  document.getElementById('total-chars').textContent = totalAcrossAllDays.toLocaleString();
 }
 
 function handlePlay() {
-  // 再生ボタン押下時に音源を「アクティブ」にする（ブラウザ制限解除）
-  alarm.play().then(() => {
-      alarm.pause();
-      alarm.currentTime = 0;
-  }).catch(() => {});
-
   if (state.running) {
     toggleTimer();
   } else {
     if (state.mode === 'focus') {
-      const val = prompt("Writing Start - Character count:", "");
+      const val = prompt("Writing Start - Current character count:", "");
       if (val === null) return;
       state.startCount = (val === "") ? state.startCount : (parseInt(val) || 0);
     }
@@ -148,18 +145,14 @@ function tick() {
 function complete() {
   state.running = false;
   clearInterval(state.timerId);
-  
-  // アラーム再生
-  alarm.play().catch(e => console.log("Audio failed", e));
   document.getElementById('timer-card').classList.add('flash-red');
 
   setTimeout(() => {
     let charDiff = 0;
     if (state.mode === 'focus') {
-      // 終了時入力欄を完全に空欄にする
-      const e = prompt("Time up! End Chars:", "");
+      const e = prompt("Time up! Writing End - Current character count:", "");
       const endCount = (e === null || e === "") ? state.startCount : (parseInt(e) || state.startCount);
-      charDiff = endCount - state.startCount;
+      charDiff = Math.max(0, endCount - state.startCount);
       state.startCount = endCount; 
     } else {
       alert("Break finished.");
@@ -167,12 +160,17 @@ function complete() {
 
     const tk = todayKey();
     if (!data.days[tk]) data.days[tk] = { sessions: 0, chars: 0 };
-    if (state.mode === 'focus') {
-      data.days[tk].sessions++;
-      data.days[tk].chars += Math.max(0, charDiff);
-    }
-    localStorage.setItem('pomowriters_v8', JSON.stringify(data));
     
+    // セッションごとに文字数を加算
+    if (state.mode === 'focus') {
+      data.days[tk].sessions += 1;
+      data.days[tk].chars += charDiff;
+    }
+
+    // 保存
+    localStorage.setItem('pomowriters_v9', JSON.stringify(data));
+    
+    // モード切り替え
     state.mode = (state.mode === 'focus') ? 'break' : 'focus';
     state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
     document.getElementById('mode-text').textContent = state.mode.toUpperCase();
@@ -198,7 +196,7 @@ function saveSettings() {
   const b = parseInt(document.getElementById('set-break').value);
   if (f > 0) data.settings.focus = f;
   if (b > 0) data.settings.break = b;
-  localStorage.setItem('pomowriters_v8', JSON.stringify(data));
+  localStorage.setItem('pomowriters_v9', JSON.stringify(data));
   if (!state.running) resetTimer();
 }
 
