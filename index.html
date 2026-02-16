@@ -1,35 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pomodoro-for-writers</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
 :root { --bg: #0b0e14; --surface: #161b22; --accent: #e05a5a; --text-main: #f0f6fc; --text-sub: #8b949e; --border: #30363d; }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; position: fixed; width: 100%; }
-header { padding: 30px 20px 10px; display: flex; justify-content: space-between; align-items: flex-end; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; }
+header { padding: 30px 20px 10px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); }
 h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
-.total-label { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; }
+.total-label { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; }
 .total-count { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--accent); }
-#content { height: calc(100% - 170px); overflow-y: auto; padding: 20px; }
-.view { display: none; opacity: 0; }
-.view.active { display: block; opacity: 1; }
-.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 20px; text-align: center; margin-bottom: 20px; transition: background 0.3s; }
-.mode-status { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-sub); margin-bottom: 10px; }
-.timer-display { font-family: 'JetBrains Mono', monospace; font-size: 4.2rem; font-weight: 500; margin: 10px 0 30px; }
-.controls { display: flex; justify-content: center; align-items: center; gap: 25px; }
-.btn { background: none; border: none; color: var(--text-sub); font-size: 0.7rem; letter-spacing: 0.1em; cursor: pointer; padding: 10px; }
-.btn-play { background: var(--accent); color: white; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 15px rgba(224,90,90,0.3); }
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; }
-.stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; display: block; }
-.stat-lbl { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; margin-top: 5px; }
-nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding-bottom: env(safe-area-inset-bottom); z-index: 999; }
-nav button { background: none; border: none; color: var(--text-sub); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; width: 50%; cursor: pointer; }
-nav button.active { color: var(--accent); font-weight: 600; }
+#content { height: calc(100% - 170px); overflow-y: auto; padding: 40px 20px; }
+.view { display: none; }
+.view.active { display: block; }
+.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 50px 20px; text-align: center; max-width: 500px; margin: 0 auto 30px; }
+.mode-status { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--text-sub); margin-bottom: 15px; }
+.timer-display { font-family: 'JetBrains Mono', monospace; font-size: 5rem; font-weight: 500; margin-bottom: 40px; }
+.controls { display: flex; justify-content: center; align-items: center; gap: 30px; }
+.btn { background: none; border: none; color: var(--text-sub); font-size: 0.8rem; cursor: pointer; padding: 10px; text-transform: uppercase; }
+.btn-play { background: var(--accent); color: white; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 20px rgba(224,90,90,0.4); }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 500px; margin: 0 auto; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+.stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; display: block; }
+.stat-lbl { font-size: 0.7rem; color: var(--text-sub); margin-top: 8px; }
+nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 50px; }
+nav button { background: none; border: none; color: var(--text-sub); font-size: 0.8rem; text-transform: uppercase; cursor: pointer; width: 150px; }
+nav button.active { color: var(--accent); font-weight: 600; border-top: 2px solid var(--accent); }
 .flash-red { animation: flash 0.5s infinite; }
 @keyframes flash { 0% { background: var(--surface); } 50% { background: #4a1515; } 100% { background: var(--surface); } }
 </style>
@@ -50,9 +49,9 @@ nav button.active { color: var(--accent); font-weight: 600; }
       <div class="mode-status" id="mode-text">Focus</div>
       <div class="timer-display" id="timer-display">20:00</div>
       <div class="controls">
-        <button class="btn" onclick="resetTimer()">RESET</button>
+        <button class="btn" onclick="resetTimer()">Reset</button>
         <button class="btn btn-play" id="btn-play" onclick="handlePlay()">▶</button>
-        <button class="btn" onclick="skipSession()">SKIP</button>
+        <button class="btn" onclick="skipSession()">Skip</button>
       </div>
     </div>
     <div class="stats-grid">
@@ -62,12 +61,12 @@ nav button.active { color: var(--accent); font-weight: 600; }
   </div>
 
   <div id="view-settings" class="view">
-    <div style="background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden;">
-      <div style="display:flex; justify-content:space-between; padding:20px; border-bottom:1px solid var(--border);">
-        <span>Focus (min)</span><input type="number" pattern="\d*" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; border-radius:8px;" id="set-focus" oninput="saveSettings()">
+    <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden;">
+      <div style="display:flex; justify-content:space-between; padding:25px; border-bottom:1px solid var(--border);">
+        <span>Focus (min)</span><input type="number" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;" id="set-focus" oninput="saveSettings()">
       </div>
-      <div style="display:flex; justify-content:space-between; padding:20px;">
-        <span>Break (min)</span><input type="number" pattern="\d*" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; border-radius:8px;" id="set-break" oninput="saveSettings()">
+      <div style="display:flex; justify-content:space-between; padding:25px;">
+        <span>Break (min)</span><input type="number" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;" id="set-break" oninput="saveSettings()">
       </div>
     </div>
   </div>
@@ -79,13 +78,12 @@ nav button.active { color: var(--accent); font-weight: 600; }
 </nav>
 
 <script>
-// バージョンを更新して古いキャッシュ干渉を防ぐ
-let data = JSON.parse(localStorage.getItem('pomowriters_v9') || '{"settings":{"focus":20,"break":5},"days":{}}');
-let state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, startCount: 0 };
+// 新しいキーで保存をリセットして不具合を解消
+let data = JSON.parse(localStorage.getItem('pomowriters_v10') || '{"settings":{"focus":20,"break":5},"days":{}}');
+let state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, startCount: 0, audioCtx: null };
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
-// UIと累計計算の同期を確実にする関数
 function updateUI() {
   const m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
   const s = (state.timeLeft % 60).toString().padStart(2, '0');
@@ -93,24 +91,27 @@ function updateUI() {
   
   const tk = todayKey();
   const day = data.days[tk] || { sessions: 0, chars: 0 };
-  
   document.getElementById('today-sessions').textContent = day.sessions;
   document.getElementById('today-chars').textContent = day.chars.toLocaleString();
   
-  // すべての日の合計を再計算して確実に反映
-  let totalAcrossAllDays = 0;
-  for (let key in data.days) {
-    totalAcrossAllDays += (data.days[key].chars || 0);
+  let totalAll = 0;
+  for (let key in data.days) totalAll += (data.days[key].chars || 0);
+  document.getElementById('total-chars').textContent = totalAll.toLocaleString();
+}
+
+function initAudio() {
+  if (!state.audioCtx) {
+    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  document.getElementById('total-chars').textContent = totalAcrossAllDays.toLocaleString();
 }
 
 function handlePlay() {
+  initAudio();
   if (state.running) {
     toggleTimer();
   } else {
     if (state.mode === 'focus') {
-      const val = prompt("Writing Start - Current character count:", "");
+      const val = prompt("執筆開始：現在の文字数を入力してください", "");
       if (val === null) return;
       state.startCount = (val === "") ? state.startCount : (parseInt(val) || 0);
     }
@@ -142,42 +143,52 @@ function tick() {
   }
 }
 
+function playSound() {
+  if (!state.audioCtx) return;
+  const osc = state.audioCtx.createOscillator();
+  const gain = state.audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(state.audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, state.audioCtx.currentTime); // A5
+  gain.gain.setValueAtTime(0, state.audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.2, state.audioCtx.currentTime + 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + 1.5);
+  osc.start();
+  osc.stop(state.audioCtx.currentTime + 1.5);
+}
+
 function complete() {
   state.running = false;
   clearInterval(state.timerId);
+  playSound(); // 音を鳴らす
   document.getElementById('timer-card').classList.add('flash-red');
 
+  // 少し遅らせてから入力ダイアログを出す（ブラウザのフリーズ防止）
   setTimeout(() => {
-    let charDiff = 0;
+    let diff = 0;
     if (state.mode === 'focus') {
-      const e = prompt("Time up! Writing End - Current character count:", "");
+      const e = prompt("時間終了！現在の文字数を入力してください", "");
       const endCount = (e === null || e === "") ? state.startCount : (parseInt(e) || state.startCount);
-      charDiff = Math.max(0, endCount - state.startCount);
+      diff = Math.max(0, endCount - state.startCount);
       state.startCount = endCount; 
-    } else {
-      alert("Break finished.");
-    }
 
-    const tk = todayKey();
-    if (!data.days[tk]) data.days[tk] = { sessions: 0, chars: 0 };
-    
-    // セッションごとに文字数を加算
-    if (state.mode === 'focus') {
+      const tk = todayKey();
+      if (!data.days[tk]) data.days[tk] = { sessions: 0, chars: 0 };
       data.days[tk].sessions += 1;
-      data.days[tk].chars += charDiff;
+      data.days[tk].chars += diff;
+      localStorage.setItem('pomowriters_v10', JSON.stringify(data));
+    } else {
+      alert("休憩終了です。お疲れ様でした！");
     }
 
-    // 保存
-    localStorage.setItem('pomowriters_v9', JSON.stringify(data));
-    
-    // モード切り替え
     state.mode = (state.mode === 'focus') ? 'break' : 'focus';
     state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
     document.getElementById('mode-text').textContent = state.mode.toUpperCase();
     document.getElementById('btn-play').textContent = "▶";
     document.getElementById('timer-card').classList.remove('flash-red');
     updateUI();
-  }, 500);
+  }, 100);
 }
 
 function switchView(name) {
@@ -192,11 +203,11 @@ function switchView(name) {
 }
 
 function saveSettings() {
-  const f = parseInt(document.getElementById('set-focus').value);
-  const b = parseInt(document.getElementById('set-break').value);
-  if (f > 0) data.settings.focus = f;
-  if (b > 0) data.settings.break = b;
-  localStorage.setItem('pomowriters_v9', JSON.stringify(data));
+  const f = parseInt(document.getElementById('set-focus').value) || 20;
+  const b = parseInt(document.getElementById('set-break').value) || 5;
+  data.settings.focus = f;
+  data.settings.break = b;
+  localStorage.setItem('pomowriters_v10', JSON.stringify(data));
   if (!state.running) resetTimer();
 }
 
@@ -208,7 +219,7 @@ function resetTimer() {
   updateUI();
 }
 
-function skipSession() { if(confirm("Skip?")) complete(); }
+function skipSession() { if(confirm("今のセッションをスキップしますか？")) complete(); }
 updateUI();
 </script>
 </body>
