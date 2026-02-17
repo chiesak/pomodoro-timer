@@ -31,6 +31,35 @@ nav button { background: none; border: none; color: var(--text-sub); font-size: 
 nav button.active { color: var(--accent); font-weight: 600; border-top: 2px solid var(--accent); }
 .flash-red { animation: flash 0.5s infinite; }
 @keyframes flash { 0% { background: var(--surface); } 50% { background: #4a1515; } 100% { background: var(--surface); } }
+
+/* ===== モーダル（prompt/alert の置き換え）===== */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px 28px;
+  width: 90%; max-width: 380px; text-align: center;
+}
+.modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.modal-sub { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 20px; line-height: 1.7; }
+.modal-input {
+  width: 100%; background: #000; border: 1px solid var(--border);
+  color: var(--accent); font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem; text-align: center; padding: 10px;
+  border-radius: 8px; margin-bottom: 20px; outline: none;
+}
+.modal-input:focus { border-color: var(--accent); }
+.modal-buttons { display: flex; gap: 12px; justify-content: center; }
+.modal-btn {
+  padding: 10px 28px; border-radius: 8px; border: none;
+  cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+}
+.modal-btn-ok { background: var(--accent); color: white; }
+.modal-btn-cancel { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -50,7 +79,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
       <div class="timer-display" id="timer-display">20:00</div>
       <div class="controls">
         <button class="btn" onclick="resetTimer()">Reset</button>
-        <button class="btn btn-play" id="btn-play" onclick="handlePlay()">▶</button>
+        <button class="btn btn-play" id="btn-play" onclick="handlePlay()">&#9654;</button>
         <button class="btn" onclick="skipSession()">Skip</button>
       </div>
     </div>
@@ -63,10 +92,14 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   <div id="view-settings" class="view">
     <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden;">
       <div style="display:flex; justify-content:space-between; padding:25px; border-bottom:1px solid var(--border);">
-        <span>Focus (min)</span><input type="number" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;" id="set-focus" oninput="saveSettings()">
+        <span>Focus (min)</span>
+        <input type="number" id="set-focus" oninput="saveSettings()"
+          style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
       </div>
       <div style="display:flex; justify-content:space-between; padding:25px;">
-        <span>Break (min)</span><input type="number" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;" id="set-break" oninput="saveSettings()">
+        <span>Break (min)</span>
+        <input type="number" id="set-break" oninput="saveSettings()"
+          style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
       </div>
     </div>
   </div>
@@ -77,141 +110,237 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   <button id="nav-settings" onclick="switchView('settings')">Settings</button>
 </nav>
 
+<!-- ▼ 文字数入力モーダル（prompt/alert の代替） -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <input type="number" class="modal-input" id="modal-input" placeholder="0" inputmode="numeric">
+    <div class="modal-buttons">
+      <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">キャンセル</button>
+      <button class="modal-btn modal-btn-ok" id="modal-ok-btn">記録する</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// キーを更新してクリーンな環境に
-let data = JSON.parse(localStorage.getItem('pomowriters_v11') || '{"settings":{"focus":20,"break":5},"days":{}}');
-let state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, startCount: 0, audioCtx: null };
+// ===== データ & 状態 =====
+var data = JSON.parse(localStorage.getItem('pomowriters_v11') || '{"settings":{"focus":20,"break":5},"days":{}}');
+var state = {
+  running: false,
+  mode: 'focus',
+  timeLeft: data.settings.focus * 60,
+  timerId: null,
+  endTime: 0,
+  startCount: 0,
+  audioCtx: null
+};
 
-function todayKey() { return new Date().toISOString().split('T')[0]; }
+function todayKey() {
+  return new Date().toISOString().split('T')[0];
+}
 
+// ===== UI 更新 =====
+// [修正1] mode-text を updateUI() 内で常に同期するよう変更
 function updateUI() {
-  const m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
-  const s = (state.timeLeft % 60).toString().padStart(2, '0');
-  document.getElementById('timer-display').textContent = `${m}:${s}`;
-  const tk = todayKey();
-  const day = data.days[tk] || { sessions: 0, chars: 0 };
+  var m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
+  var s = (state.timeLeft % 60).toString().padStart(2, '0');
+  document.getElementById('timer-display').textContent = m + ':' + s;
+  document.getElementById('mode-text').textContent = state.mode === 'focus' ? 'Focus' : 'Break';
+  var tk = todayKey();
+  var day = data.days[tk] || { sessions: 0, chars: 0 };
   document.getElementById('today-sessions').textContent = day.sessions;
   document.getElementById('today-chars').textContent = day.chars.toLocaleString();
-  let totalAll = 0;
-  for (let key in data.days) totalAll += (data.days[key].chars || 0);
+  var totalAll = 0;
+  for (var key in data.days) totalAll += (data.days[key].chars || 0);
   document.getElementById('total-chars').textContent = totalAll.toLocaleString();
 }
 
+// ===== モーダル（prompt/alert の置き換え） =====
+// [修正3] prompt() をやめてページ内モーダルに。IMEのEnterと確定Enterを isComposing で区別
+function showModal(title, sub, defaultVal, onOk, onCancel) {
+  var overlay = document.getElementById('modal-overlay');
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-sub').textContent = sub;
+  var input = document.getElementById('modal-input');
+  input.value = (defaultVal !== null && defaultVal !== undefined && defaultVal !== '') ? defaultVal : '';
+  overlay.classList.add('active');
+  // フォーカスを少し遅らせてIMEが安定してから当てる
+  setTimeout(function() { input.focus(); }, 100);
+
+  var okBtn = document.getElementById('modal-ok-btn');
+  var cancelBtn = document.getElementById('modal-cancel-btn');
+
+  function cleanup() {
+    overlay.classList.remove('active');
+    okBtn.removeEventListener('click', handleOk);
+    cancelBtn.removeEventListener('click', handleCancel);
+    input.removeEventListener('keydown', handleKey);
+  }
+  function handleOk() { cleanup(); onOk(input.value); }
+  function handleCancel() { cleanup(); if (onCancel) onCancel(); }
+  function handleKey(e) {
+    // isComposing が true の間（日本語変換中）は Enter を無視する
+    if (e.key === 'Enter' && !e.isComposing) handleOk();
+    if (e.key === 'Escape') handleCancel();
+  }
+  okBtn.addEventListener('click', handleOk);
+  cancelBtn.addEventListener('click', handleCancel);
+  input.addEventListener('keydown', handleKey);
+}
+
+// ===== 再生ボタン =====
 function handlePlay() {
-    if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (state.running) {
+  if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (state.running) {
+    toggleTimer();
+    return;
+  }
+  if (state.mode === 'focus') {
+    showModal(
+      '執筆開始',
+      '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）',
+      state.startCount || '',
+      function(val) {
+        state.startCount = (val === '') ? state.startCount : (parseInt(val) || 0);
         toggleTimer();
-    } else {
-        if (state.mode === 'focus') {
-            const val = prompt("執筆開始：現在の文字数（空欄なら前回値を引き継ぎ）", "");
-            if (val === null) return;
-            state.startCount = (val === "") ? state.startCount : (parseInt(val) || 0);
-        }
-        toggleTimer();
-    }
+      },
+      null // キャンセル時は何もしない
+    );
+  } else {
+    toggleTimer();
+  }
 }
 
 function toggleTimer() {
-    if (state.running) {
-        state.running = false;
-        clearInterval(state.timerId);
-        document.getElementById('btn-play').textContent = "▶";
-    } else {
-        state.running = true;
-        state.endTime = Date.now() + (state.timeLeft * 1000);
-        state.timerId = setInterval(tick, 200);
-        document.getElementById('btn-play').textContent = "⏸";
-    }
+  if (state.running) {
+    state.running = false;
+    clearInterval(state.timerId);
+    document.getElementById('btn-play').innerHTML = '&#9654;';
+  } else {
+    state.running = true;
+    state.endTime = Date.now() + (state.timeLeft * 1000);
+    state.timerId = setInterval(tick, 200);
+    document.getElementById('btn-play').innerHTML = '&#9208;';
+  }
 }
 
+// ===== タイマー tick =====
+// [修正2] diff <= 0 のとき updateUI() を先に呼んで 00:00 を確実に表示
 function tick() {
-    const diff = Math.round((state.endTime - Date.now()) / 1000);
-    if (diff <= 0) {
-        state.timeLeft = 0;
-        complete();
-    } else {
-        state.timeLeft = diff;
-        updateUI();
-    }
-}
-
-function playSound() {
-    if (!state.audioCtx) return;
-    const osc = state.audioCtx.createOscillator();
-    const gain = state.audioCtx.createGain();
-    osc.connect(gain); gain.connect(state.audioCtx.destination);
-    osc.frequency.setValueAtTime(880, state.audioCtx.currentTime);
-    gain.gain.setValueAtTime(0, state.audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, state.audioCtx.currentTime + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + 1);
-    osc.start(); osc.stop(state.audioCtx.currentTime + 1);
-}
-
-function complete() {
-    state.running = false;
-    clearInterval(state.timerId);
-    playSound(); // まず音を鳴らす
-    document.getElementById('timer-card').classList.add('flash-red');
-
-    // 【重要】音が鳴り始めた後、しっかり0.5秒待ってから入力画面を出す
-    setTimeout(() => {
-        if (state.mode === 'focus') {
-            const e = prompt("【セッション終了】現在の文字数を入力してください：", "");
-            // 入力がキャンセル（null）された場合は記録せず、空欄（""）の場合は前回値と同じとみなす
-            if (e !== null) {
-                const endCount = (e === "") ? state.startCount : (parseInt(e) || state.startCount);
-                const diff = Math.max(0, endCount - state.startCount);
-                state.startCount = endCount; 
-
-                const tk = todayKey();
-                if (!data.days[tk]) data.days[tk] = { sessions: 0, chars: 0 };
-                data.days[tk].sessions += 1;
-                data.days[tk].chars += diff;
-                localStorage.setItem('pomowriters_v11', JSON.stringify(data));
-            }
-        } else {
-            alert("休憩が終了しました。次のセッションを始めましょう。");
-        }
-
-        // 状態を休憩/執筆に切り替え
-        state.mode = (state.mode === 'focus') ? 'break' : 'focus';
-        state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-        document.getElementById('mode-text').textContent = state.mode.toUpperCase();
-        document.getElementById('btn-play').textContent = "▶";
-        document.getElementById('timer-card').classList.remove('flash-red');
-        updateUI();
-    }, 500); 
-}
-
-function switchView(name) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-    document.getElementById('view-' + name).classList.add('active');
-    document.getElementById('nav-' + name).classList.add('active');
-    if (name === 'settings') {
-        document.getElementById('set-focus').value = data.settings.focus;
-        document.getElementById('set-break').value = data.settings.break;
-    }
-}
-
-function saveSettings() {
-    const f = parseInt(document.getElementById('set-focus').value) || 20;
-    const b = parseInt(document.getElementById('set-break').value) || 5;
-    data.settings.focus = f;
-    data.settings.break = b;
-    localStorage.setItem('pomowriters_v11', JSON.stringify(data));
-    if (!state.running) resetTimer();
-}
-
-function resetTimer() {
-    state.running = false;
-    clearInterval(state.timerId);
-    state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-    document.getElementById('btn-play').textContent = "▶";
+  var diff = Math.round((state.endTime - Date.now()) / 1000);
+  if (diff <= 0) {
+    state.timeLeft = 0;
+    updateUI();   // ← 先に表示を 00:00 に更新
+    complete();
+  } else {
+    state.timeLeft = diff;
     updateUI();
+  }
 }
 
-function skipSession() { if(confirm("このセッションを終了して記録しますか？")) complete(); }
+// ===== サウンド =====
+function playSound() {
+  if (!state.audioCtx) return;
+  var osc = state.audioCtx.createOscillator();
+  var gain = state.audioCtx.createGain();
+  osc.connect(gain); gain.connect(state.audioCtx.destination);
+  osc.frequency.setValueAtTime(880, state.audioCtx.currentTime);
+  gain.gain.setValueAtTime(0, state.audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.2, state.audioCtx.currentTime + 0.1);
+  gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + 1);
+  osc.start(); osc.stop(state.audioCtx.currentTime + 1);
+}
+
+// ===== セッション完了 =====
+function complete() {
+  state.running = false;
+  clearInterval(state.timerId);
+  playSound();
+  document.getElementById('timer-card').classList.add('flash-red');
+
+  setTimeout(function() {
+    if (state.mode === 'focus') {
+      showModal(
+        'セッション終了',
+        '現在の文字数を入力してください\n（空欄なら変化なしで記録）',
+        '',
+        function(val) {
+          var endCount = (val === '') ? state.startCount : (parseInt(val) || state.startCount);
+          var diff = Math.max(0, endCount - state.startCount);
+          state.startCount = endCount;
+          var tk = todayKey();
+          if (!data.days[tk]) data.days[tk] = { sessions: 0, chars: 0 };
+          data.days[tk].sessions += 1;
+          data.days[tk].chars += diff;
+          localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+          finishComplete();
+        },
+        function() {
+          finishComplete(); // キャンセルしてもモード切り替えは行う
+        }
+      );
+    } else {
+      finishComplete();
+    }
+  }, 500);
+}
+
+function finishComplete() {
+  state.mode = (state.mode === 'focus') ? 'break' : 'focus';
+  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
+  document.getElementById('btn-play').innerHTML = '&#9654;';
+  document.getElementById('timer-card').classList.remove('flash-red');
+  updateUI();
+}
+
+// ===== ビュー切り替え =====
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'settings') {
+    document.getElementById('set-focus').value = data.settings.focus;
+    document.getElementById('set-break').value = data.settings.break;
+  }
+}
+
+// ===== 設定保存 =====
+function saveSettings() {
+  var f = parseInt(document.getElementById('set-focus').value) || 20;
+  var b = parseInt(document.getElementById('set-break').value) || 5;
+  data.settings.focus = f;
+  data.settings.break = b;
+  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+  if (!state.running) resetTimer();
+}
+
+// ===== リセット =====
+// [修正1] flash-red の除去を追加。mode-text は updateUI() が担当するので重複不要
+function resetTimer() {
+  state.running = false;
+  clearInterval(state.timerId);
+  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
+  document.getElementById('btn-play').innerHTML = '&#9654;';
+  document.getElementById('timer-card').classList.remove('flash-red'); // ← 追加
+  updateUI();
+}
+
+// ===== スキップ =====
+// [修正4] complete() を呼ばず、記録なしで次のモードへ切り替えるだけにする
+function skipSession() {
+  if (!confirm('このセッションをスキップしますか？（記録されません）')) return;
+  state.running = false;
+  clearInterval(state.timerId);
+  state.mode = (state.mode === 'focus') ? 'break' : 'focus';
+  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
+  document.getElementById('btn-play').innerHTML = '&#9654;';
+  document.getElementById('timer-card').classList.remove('flash-red');
+  updateUI();
+}
+
+// 初期表示
 updateUI();
 </script>
 </body>
