@@ -37,8 +37,12 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.75); z-index: 100;
   align-items: center; justify-content: center;
+  pointer-events: none; /* 非表示時はクリックを貫通させる */
 }
-.modal-overlay.active { display: flex; }
+.modal-overlay.active {
+  display: flex;
+  pointer-events: auto; /* 表示時だけクリックを受け取る */
+}
 .modal-box {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 16px; padding: 32px 28px;
@@ -317,13 +321,16 @@ function saveSettings() {
 }
 
 // ===== リセット =====
-// [修正1] flash-red の除去を追加。mode-text は updateUI() が担当するので重複不要
 function resetTimer() {
+  // モーダルが開いたままでも強制クローズ
+  document.getElementById('modal-overlay').classList.remove('active');
   state.running = false;
   clearInterval(state.timerId);
-  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
+  state.mode = 'focus';   // Focus に戻す
+  state.timeLeft = data.settings.focus * 60;
+  state.startCount = 0;
   document.getElementById('btn-play').innerHTML = '&#9654;';
-  document.getElementById('timer-card').classList.remove('flash-red'); // ← 追加
+  document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
 
