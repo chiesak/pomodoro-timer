@@ -94,7 +94,8 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   </div>
 
   <div id="view-settings" class="view">
-    <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden;">
+    <!-- タイマー設定 -->
+    <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; padding:25px; border-bottom:1px solid var(--border);">
         <span>Focus (min)</span>
         <input type="number" id="set-focus" oninput="saveSettings()"
@@ -105,6 +106,20 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
         <input type="number" id="set-break" oninput="saveSettings()"
           style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
       </div>
+    </div>
+
+    <!-- 記録の編集・削除 -->
+    <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px;">
+      <div style="padding:20px 25px; border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.1em;">記録の管理</div>
+      <div id="records-list" style="padding:10px 0;"></div>
+    </div>
+
+    <!-- 全データ削除 -->
+    <div style="max-width:500px; margin:0 auto; text-align:center; padding-bottom:20px;">
+      <button onclick="clearAllData()"
+        style="background:transparent; border:1px solid #6b2020; color:#e05a5a; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">
+        すべての記録を削除
+      </button>
     </div>
   </div>
 </div>
@@ -307,7 +322,70 @@ function switchView(name) {
   if (name === 'settings') {
     document.getElementById('set-focus').value = data.settings.focus;
     document.getElementById('set-break').value = data.settings.break;
+    renderRecordsList();
   }
+}
+
+// ===== 記録一覧の表示・編集 =====
+function renderRecordsList() {
+  var container = document.getElementById('records-list');
+  var keys = Object.keys(data.days).sort().reverse(); // 新しい日付が上
+  if (keys.length === 0) {
+    container.innerHTML = '<div style="padding:20px 25px; color:var(--text-sub); font-size:0.85rem;">記録はありません</div>';
+    return;
+  }
+  container.innerHTML = '';
+  keys.forEach(function(dateKey) {
+    var day = data.days[dateKey];
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:14px 25px; border-bottom:1px solid var(--border);';
+    row.innerHTML =
+      '<span style="font-size:0.85rem;">' + dateKey + '</span>' +
+      '<span style="font-family:JetBrains Mono,monospace; font-size:0.85rem; color:var(--text-sub);">' +
+        day.sessions + 'セッション&nbsp;&nbsp;' + day.chars.toLocaleString() + '文字' +
+      '</span>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button onclick="editRecord('' + dateKey + '')" ' +
+          'style="background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">編集</button>' +
+        '<button onclick="deleteRecord('' + dateKey + '')" ' +
+          'style="background:transparent;border:1px solid #6b2020;color:var(--accent);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">削除</button>' +
+      '</div>';
+    container.appendChild(row);
+  });
+}
+
+function editRecord(dateKey) {
+  var day = data.days[dateKey];
+  showModal(
+    dateKey + ' の記録を修正',
+    '文字数を入力してください（現在：' + day.chars.toLocaleString() + '文字）',
+    day.chars,
+    function(val) {
+      var newChars = parseInt(val);
+      if (isNaN(newChars) || newChars < 0) { alert('正しい数値を入力してください'); return; }
+      data.days[dateKey].chars = newChars;
+      localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+      updateUI();
+      renderRecordsList();
+    },
+    null
+  );
+}
+
+function deleteRecord(dateKey) {
+  if (!confirm(dateKey + ' の記録を削除しますか？')) return;
+  delete data.days[dateKey];
+  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+  updateUI();
+  renderRecordsList();
+}
+
+function clearAllData() {
+  if (!confirm('すべての記録を削除します。この操作は元に戻せません。よろしいですか？')) return;
+  data.days = {};
+  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+  updateUI();
+  renderRecordsList();
 }
 
 // ===== 設定保存 =====
