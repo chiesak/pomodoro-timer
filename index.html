@@ -31,37 +31,15 @@ nav button { background: none; border: none; color: var(--text-sub); font-size: 
 nav button.active { color: var(--accent); font-weight: 600; border-top: 2px solid var(--accent); }
 .flash-red { animation: flash 0.5s infinite; }
 @keyframes flash { 0% { background: var(--surface); } 50% { background: #4a1515; } 100% { background: var(--surface); } }
-
-/* ===== モーダル（prompt/alert の置き換え）===== */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.75); z-index: 100;
-  align-items: center; justify-content: center;
-  pointer-events: none; /* 非表示時はクリックを貫通させる */
-}
-.modal-overlay.active {
-  display: flex;
-  pointer-events: auto; /* 表示時だけクリックを受け取る */
-}
-.modal-box {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 32px 28px;
-  width: 90%; max-width: 380px; text-align: center;
-}
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; pointer-events: none; }
+.modal-overlay.active { display: flex; pointer-events: auto; }
+.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 28px; width: 90%; max-width: 380px; text-align: center; }
 .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
 .modal-sub { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 20px; line-height: 1.7; }
-.modal-input {
-  width: 100%; background: #000; border: 1px solid var(--border);
-  color: var(--accent); font-family: 'JetBrains Mono', monospace;
-  font-size: 1.6rem; text-align: center; padding: 10px;
-  border-radius: 8px; margin-bottom: 20px; outline: none;
-}
+.modal-input { width: 100%; background: #000; border: 1px solid var(--border); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 20px; outline: none; }
 .modal-input:focus { border-color: var(--accent); }
 .modal-buttons { display: flex; gap: 12px; justify-content: center; }
-.modal-btn {
-  padding: 10px 28px; border-radius: 8px; border: none;
-  cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif;
-}
+.modal-btn { padding: 10px 28px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif; }
 .modal-btn-ok { background: var(--accent); color: white; }
 .modal-btn-cancel { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
 </style>
@@ -70,7 +48,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 
 <header>
   <h1>Pomodoro-for-writers</h1>
-  <div style="text-align: right;">
+  <div style="text-align:right;">
     <div class="total-label">Total Chars</div>
     <div class="total-count" id="total-chars">0</div>
   </div>
@@ -94,32 +72,22 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   </div>
 
   <div id="view-settings" class="view">
-    <!-- タイマー設定 -->
     <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; padding:25px; border-bottom:1px solid var(--border);">
         <span>Focus (min)</span>
-        <input type="number" id="set-focus" oninput="saveSettings()"
-          style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
+        <input type="number" id="set-focus" oninput="saveSettings()" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
       </div>
       <div style="display:flex; justify-content:space-between; padding:25px;">
         <span>Break (min)</span>
-        <input type="number" id="set-break" oninput="saveSettings()"
-          style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
+        <input type="number" id="set-break" oninput="saveSettings()" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
       </div>
     </div>
-
-    <!-- 記録の編集・削除 -->
     <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px;">
       <div style="padding:20px 25px; border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.1em;">記録の管理</div>
       <div id="records-list" style="padding:10px 0;"></div>
     </div>
-
-    <!-- 全データ削除 -->
     <div style="max-width:500px; margin:0 auto; text-align:center; padding-bottom:20px;">
-      <button onclick="clearAllData()"
-        style="background:transparent; border:1px solid #6b2020; color:#e05a5a; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">
-        すべての記録を削除
-      </button>
+      <button onclick="clearAllData()" style="background:transparent; border:1px solid #6b2020; color:#e05a5a; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-transform:uppercase;">すべての記録を削除</button>
     </div>
   </div>
 </div>
@@ -129,7 +97,6 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   <button id="nav-settings" onclick="switchView('settings')">Settings</button>
 </nav>
 
-<!-- ▼ 文字数入力モーダル（prompt/alert の代替） -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <div class="modal-title" id="modal-title"></div>
@@ -143,24 +110,11 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 </div>
 
 <script>
-// ===== データ & 状態 =====
 var data = JSON.parse(localStorage.getItem('pomowriters_v11') || '{"settings":{"focus":20,"break":5},"days":{}}');
-var state = {
-  running: false,
-  mode: 'focus',
-  timeLeft: data.settings.focus * 60,
-  timerId: null,
-  endTime: 0,
-  startCount: 0,
-  audioCtx: null
-};
+var state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, endTime: 0, startCount: 0, audioCtx: null };
 
-function todayKey() {
-  return new Date().toISOString().split('T')[0];
-}
+function todayKey() { return new Date().toISOString().split('T')[0]; }
 
-// ===== UI 更新 =====
-// [修正1] mode-text を updateUI() 内で常に同期するよう変更
 function updateUI() {
   var m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
   var s = (state.timeLeft % 60).toString().padStart(2, '0');
@@ -175,8 +129,6 @@ function updateUI() {
   document.getElementById('total-chars').textContent = totalAll.toLocaleString();
 }
 
-// ===== モーダル（prompt/alert の置き換え） =====
-// [修正3] prompt() をやめてページ内モーダルに。IMEのEnterと確定Enterを isComposing で区別
 function showModal(title, sub, defaultVal, onOk, onCancel) {
   var overlay = document.getElementById('modal-overlay');
   document.getElementById('modal-title').textContent = title;
@@ -184,12 +136,9 @@ function showModal(title, sub, defaultVal, onOk, onCancel) {
   var input = document.getElementById('modal-input');
   input.value = (defaultVal !== null && defaultVal !== undefined && defaultVal !== '') ? defaultVal : '';
   overlay.classList.add('active');
-  // フォーカスを少し遅らせてIMEが安定してから当てる
   setTimeout(function() { input.focus(); }, 100);
-
   var okBtn = document.getElementById('modal-ok-btn');
   var cancelBtn = document.getElementById('modal-cancel-btn');
-
   function cleanup() {
     overlay.classList.remove('active');
     okBtn.removeEventListener('click', handleOk);
@@ -199,7 +148,6 @@ function showModal(title, sub, defaultVal, onOk, onCancel) {
   function handleOk() { cleanup(); onOk(input.value); }
   function handleCancel() { cleanup(); if (onCancel) onCancel(); }
   function handleKey(e) {
-    // isComposing が true の間（日本語変換中）は Enter を無視する
     if (e.key === 'Enter' && !e.isComposing) handleOk();
     if (e.key === 'Escape') handleCancel();
   }
@@ -208,24 +156,12 @@ function showModal(title, sub, defaultVal, onOk, onCancel) {
   input.addEventListener('keydown', handleKey);
 }
 
-// ===== 再生ボタン =====
 function handlePlay() {
   if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (state.running) {
-    toggleTimer();
-    return;
-  }
+  if (state.running) { toggleTimer(); return; }
   if (state.mode === 'focus') {
-    showModal(
-      '執筆開始',
-      '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）',
-      state.startCount || '',
-      function(val) {
-        state.startCount = (val === '') ? state.startCount : (parseInt(val) || 0);
-        toggleTimer();
-      },
-      null // キャンセル時は何もしない
-    );
+    showModal('執筆開始', '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）', state.startCount || '',
+      function(val) { state.startCount = (val === '') ? state.startCount : (parseInt(val) || 0); toggleTimer(); }, null);
   } else {
     toggleTimer();
   }
@@ -235,22 +171,20 @@ function toggleTimer() {
   if (state.running) {
     state.running = false;
     clearInterval(state.timerId);
-    document.getElementById('btn-play').innerHTML = '&#9654;';
+    document.getElementById('btn-play').textContent = '\u25B6';
   } else {
     state.running = true;
     state.endTime = Date.now() + (state.timeLeft * 1000);
     state.timerId = setInterval(tick, 200);
-    document.getElementById('btn-play').innerHTML = '&#9208;';
+    document.getElementById('btn-play').textContent = '\u23F8';
   }
 }
 
-// ===== タイマー tick =====
-// [修正2] diff <= 0 のとき updateUI() を先に呼んで 00:00 を確実に表示
 function tick() {
   var diff = Math.round((state.endTime - Date.now()) / 1000);
   if (diff <= 0) {
     state.timeLeft = 0;
-    updateUI();   // ← 先に表示を 00:00 に更新
+    updateUI();
     complete();
   } else {
     state.timeLeft = diff;
@@ -258,7 +192,6 @@ function tick() {
   }
 }
 
-// ===== サウンド =====
 function playSound() {
   if (!state.audioCtx) return;
   var osc = state.audioCtx.createOscillator();
@@ -271,19 +204,14 @@ function playSound() {
   osc.start(); osc.stop(state.audioCtx.currentTime + 1);
 }
 
-// ===== セッション完了 =====
 function complete() {
   state.running = false;
   clearInterval(state.timerId);
   playSound();
   document.getElementById('timer-card').classList.add('flash-red');
-
   setTimeout(function() {
     if (state.mode === 'focus') {
-      showModal(
-        'セッション終了',
-        '現在の文字数を入力してください\n（空欄なら変化なしで記録）',
-        '',
+      showModal('セッション終了', '現在の文字数を入力してください\n（空欄なら変化なしで記録）', '',
         function(val) {
           var endCount = (val === '') ? state.startCount : (parseInt(val) || state.startCount);
           var diff = Math.max(0, endCount - state.startCount);
@@ -295,10 +223,7 @@ function complete() {
           localStorage.setItem('pomowriters_v11', JSON.stringify(data));
           finishComplete();
         },
-        function() {
-          finishComplete(); // キャンセルしてもモード切り替えは行う
-        }
-      );
+        function() { finishComplete(); });
     } else {
       finishComplete();
     }
@@ -308,12 +233,11 @@ function complete() {
 function finishComplete() {
   state.mode = (state.mode === 'focus') ? 'break' : 'focus';
   state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-  document.getElementById('btn-play').innerHTML = '&#9654;';
+  document.getElementById('btn-play').textContent = '\u25B6';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
 
-// ===== ビュー切り替え =====
 function switchView(name) {
   document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
   document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
@@ -326,10 +250,41 @@ function switchView(name) {
   }
 }
 
-// ===== 記録一覧の表示・編集 =====
+function saveSettings() {
+  var f = parseInt(document.getElementById('set-focus').value) || 20;
+  var b = parseInt(document.getElementById('set-break').value) || 5;
+  data.settings.focus = f;
+  data.settings.break = b;
+  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+  if (!state.running) resetTimer();
+}
+
+function resetTimer() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  state.running = false;
+  clearInterval(state.timerId);
+  state.mode = 'focus';
+  state.timeLeft = data.settings.focus * 60;
+  state.startCount = 0;
+  document.getElementById('btn-play').textContent = '\u25B6';
+  document.getElementById('timer-card').classList.remove('flash-red');
+  updateUI();
+}
+
+function skipSession() {
+  if (!confirm('このセッションをスキップしますか？（記録されません）')) return;
+  state.running = false;
+  clearInterval(state.timerId);
+  state.mode = (state.mode === 'focus') ? 'break' : 'focus';
+  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
+  document.getElementById('btn-play').textContent = '\u25B6';
+  document.getElementById('timer-card').classList.remove('flash-red');
+  updateUI();
+}
+
 function renderRecordsList() {
   var container = document.getElementById('records-list');
-  var keys = Object.keys(data.days).sort().reverse(); // 新しい日付が上
+  var keys = Object.keys(data.days).sort().reverse();
   if (keys.length === 0) {
     container.innerHTML = '<div style="padding:20px 25px; color:var(--text-sub); font-size:0.85rem;">記録はありません</div>';
     return;
@@ -341,14 +296,10 @@ function renderRecordsList() {
     row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:14px 25px; border-bottom:1px solid var(--border);';
     row.innerHTML =
       '<span style="font-size:0.85rem;">' + dateKey + '</span>' +
-      '<span style="font-family:JetBrains Mono,monospace; font-size:0.85rem; color:var(--text-sub);">' +
-        day.sessions + 'セッション&nbsp;&nbsp;' + day.chars.toLocaleString() + '文字' +
-      '</span>' +
+      '<span style="font-size:0.8rem; color:var(--text-sub);">' + day.sessions + 'セッション&#12288;' + day.chars.toLocaleString() + '文字</span>' +
       '<div style="display:flex;gap:8px;">' +
-        '<button onclick="editRecord('' + dateKey + '')" ' +
-          'style="background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">編集</button>' +
-        '<button onclick="deleteRecord('' + dateKey + '')" ' +
-          'style="background:transparent;border:1px solid #6b2020;color:var(--accent);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">削除</button>' +
+        '<button onclick="editRecord(\'' + dateKey + '\')" style="background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">編集</button>' +
+        '<button onclick="deleteRecord(\'' + dateKey + '\')" style="background:transparent;border:1px solid #6b2020;color:var(--accent);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">削除</button>' +
       '</div>';
     container.appendChild(row);
   });
@@ -356,10 +307,7 @@ function renderRecordsList() {
 
 function editRecord(dateKey) {
   var day = data.days[dateKey];
-  showModal(
-    dateKey + ' の記録を修正',
-    '文字数を入力してください（現在：' + day.chars.toLocaleString() + '文字）',
-    day.chars,
+  showModal(dateKey + ' の記録を修正', '文字数を入力（現在：' + day.chars.toLocaleString() + '文字）', day.chars,
     function(val) {
       var newChars = parseInt(val);
       if (isNaN(newChars) || newChars < 0) { alert('正しい数値を入力してください'); return; }
@@ -367,9 +315,7 @@ function editRecord(dateKey) {
       localStorage.setItem('pomowriters_v11', JSON.stringify(data));
       updateUI();
       renderRecordsList();
-    },
-    null
-  );
+    }, null);
 }
 
 function deleteRecord(dateKey) {
@@ -381,51 +327,13 @@ function deleteRecord(dateKey) {
 }
 
 function clearAllData() {
-  if (!confirm('すべての記録を削除します。この操作は元に戻せません。よろしいですか？')) return;
+  if (!confirm('すべての記録を削除します。よろしいですか？')) return;
   data.days = {};
   localStorage.setItem('pomowriters_v11', JSON.stringify(data));
   updateUI();
   renderRecordsList();
 }
 
-// ===== 設定保存 =====
-function saveSettings() {
-  var f = parseInt(document.getElementById('set-focus').value) || 20;
-  var b = parseInt(document.getElementById('set-break').value) || 5;
-  data.settings.focus = f;
-  data.settings.break = b;
-  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
-  if (!state.running) resetTimer();
-}
-
-// ===== リセット =====
-function resetTimer() {
-  // モーダルが開いたままでも強制クローズ
-  document.getElementById('modal-overlay').classList.remove('active');
-  state.running = false;
-  clearInterval(state.timerId);
-  state.mode = 'focus';   // Focus に戻す
-  state.timeLeft = data.settings.focus * 60;
-  state.startCount = 0;
-  document.getElementById('btn-play').innerHTML = '&#9654;';
-  document.getElementById('timer-card').classList.remove('flash-red');
-  updateUI();
-}
-
-// ===== スキップ =====
-// [修正4] complete() を呼ばず、記録なしで次のモードへ切り替えるだけにする
-function skipSession() {
-  if (!confirm('このセッションをスキップしますか？（記録されません）')) return;
-  state.running = false;
-  clearInterval(state.timerId);
-  state.mode = (state.mode === 'focus') ? 'break' : 'focus';
-  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-  document.getElementById('btn-play').innerHTML = '&#9654;';
-  document.getElementById('timer-card').classList.remove('flash-red');
-  updateUI();
-}
-
-// 初期表示
 updateUI();
 </script>
 </body>
