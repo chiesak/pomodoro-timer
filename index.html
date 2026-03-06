@@ -83,7 +83,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   <div class="header-right">
     <div class="project-badge">Current Project</div>
     <div class="project-name" id="header-project-name">—</div>
-    <div class="total-label">Total Chars</div>
+    <div class="total-label">Project Total</div>
     <div class="total-count" id="total-chars">0</div>
   </div>
 </header>
@@ -220,12 +220,8 @@ function updateUI() {
   document.getElementById('today-sessions').textContent = day.sessions;
   document.getElementById('today-chars').textContent = day.chars.toLocaleString();
 
-  // total = all projects
-  var totalAll = 0;
-  for (var pid in data.projects) {
-    var p = data.projects[pid];
-    for (var dk in p.days) totalAll += (p.days[dk].chars || 0);
-  }
+  // total = current project only
+  var totalAll = proj ? projectTotalChars(proj) : 0;
   document.getElementById('total-chars').textContent = totalAll.toLocaleString();
 }
 
