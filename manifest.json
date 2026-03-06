@@ -1,11 +1,11 @@
 {
   "name": "Pomodoro-for-writing",
   "short_name": "Pomowrite",
-  "description": "Stay-forcused-while-writing",
+  "description": "Stay-focused-while-writing",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f1117",
-  "theme_color": "#0f1117",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
   "orientation": "portrait",
   "lang": "ja",
   "icons": [

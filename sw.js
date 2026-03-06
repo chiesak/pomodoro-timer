@@ -1,10 +1,9 @@
-const CACHE = 'pomodoro-v1';
+const CACHE = 'pomodoro-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
   './icon.svg',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
-  'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap'
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@500&display=swap'
 ];
 
 self.addEventListener('install', e => {

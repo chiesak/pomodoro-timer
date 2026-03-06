@@ -11,11 +11,16 @@
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; }
 header { padding: 30px 20px 10px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); }
 h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
-.total-label { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; }
+.header-right { text-align: right; }
+.project-badge { font-size: 0.65rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+.project-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.total-label { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; margin-top: 4px; }
 .total-count { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--accent); }
 #content { height: calc(100% - 170px); overflow-y: auto; padding: 40px 20px; }
 .view { display: none; }
 .view.active { display: block; }
+
+/* Timer */
 .timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 50px 20px; text-align: center; max-width: 500px; margin: 0 auto 30px; }
 .mode-status { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--text-sub); margin-bottom: 15px; }
 .timer-display { font-family: 'JetBrains Mono', monospace; font-size: 5rem; font-weight: 500; margin-bottom: 40px; }
@@ -26,35 +31,65 @@ h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
 .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; display: block; }
 .stat-lbl { font-size: 0.7rem; color: var(--text-sub); margin-top: 8px; }
-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 50px; }
-nav button { background: none; border: none; color: var(--text-sub); font-size: 0.8rem; text-transform: uppercase; cursor: pointer; width: 150px; }
+
+/* Projects View */
+.section-header { font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 0 12px 0; margin-bottom: 4px; }
+.project-list { max-width: 500px; margin: 0 auto 24px; }
+.project-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.project-item.active-project { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.project-item-left { flex: 1; min-width: 0; }
+.project-item-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-item-name.is-active { color: var(--accent); }
+.project-item-meta { font-size: 0.75rem; color: var(--text-sub); }
+.project-item-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-sub); text-align: right; flex-shrink: 0; }
+.project-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.proj-btn { background: transparent; border: 1px solid var(--border); color: var(--text-sub); padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
+.proj-btn-switch { border-color: var(--accent); color: var(--accent); }
+.new-project-btn { display: block; width: 100%; max-width: 500px; margin: 0 auto 30px; padding: 14px; background: transparent; border: 1px dashed var(--border); color: var(--text-sub); border-radius: 12px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; transition: border-color 0.2s, color 0.2s; }
+.new-project-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Settings */
+nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 30px; }
+nav button { background: none; border: none; color: var(--text-sub); font-size: 0.8rem; text-transform: uppercase; cursor: pointer; width: 120px; }
 nav button.active { color: var(--accent); font-weight: 600; border-top: 2px solid var(--accent); }
 .flash-red { animation: flash 0.5s infinite; }
 @keyframes flash { 0% { background: var(--surface); } 50% { background: #4a1515; } 100% { background: var(--surface); } }
+
+/* Modal */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; pointer-events: none; }
 .modal-overlay.active { display: flex; pointer-events: auto; }
 .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 28px; width: 90%; max-width: 380px; text-align: center; }
 .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
-.modal-sub { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 20px; line-height: 1.7; }
+.modal-sub { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 20px; line-height: 1.7; white-space: pre-line; }
 .modal-input { width: 100%; background: #000; border: 1px solid var(--border); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 20px; outline: none; }
+.modal-input.text-input { font-size: 1rem; font-family: 'Inter', sans-serif; }
 .modal-input:focus { border-color: var(--accent); }
 .modal-buttons { display: flex; gap: 12px; justify-content: center; }
 .modal-btn { padding: 10px 28px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif; }
 .modal-btn-ok { background: var(--accent); color: white; }
 .modal-btn-cancel { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+
+/* Settings panel */
+.settings-panel { max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
+.settings-row { display:flex; justify-content:space-between; align-items:center; padding:25px; border-bottom:1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-input { background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--accent); }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Pomodoro-for-writers</h1>
-  <div style="text-align:right;">
+  <div class="header-right">
+    <div class="project-badge">Current Project</div>
+    <div class="project-name" id="header-project-name">—</div>
     <div class="total-label">Total Chars</div>
     <div class="total-count" id="total-chars">0</div>
   </div>
 </header>
 
 <div id="content">
+  <!-- Timer View -->
   <div id="view-timer" class="view active">
     <div class="timer-card" id="timer-card">
       <div class="mode-status" id="mode-text">Focus</div>
@@ -66,75 +101,144 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
       </div>
     </div>
     <div class="stats-grid">
-      <div class="stat-card"><span class="stat-val" id="today-sessions">0</span><span class="stat-lbl">Sessions</span></div>
+      <div class="stat-card"><span class="stat-val" id="today-sessions">0</span><span class="stat-lbl">Sessions Today</span></div>
       <div class="stat-card"><span class="stat-val" id="today-chars">0</span><span class="stat-lbl">Today's Chars</span></div>
     </div>
   </div>
 
-  <div id="view-settings" class="view">
-    <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px;">
-      <div style="display:flex; justify-content:space-between; padding:25px; border-bottom:1px solid var(--border);">
-        <span>Focus (min)</span>
-        <input type="number" id="set-focus" oninput="saveSettings()" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
-      </div>
-      <div style="display:flex; justify-content:space-between; padding:25px;">
-        <span>Break (min)</span>
-        <input type="number" id="set-break" oninput="saveSettings()" style="background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px;">
-      </div>
+  <!-- Projects View -->
+  <div id="view-projects" class="view">
+    <div class="project-list">
+      <div class="section-header">プロジェクト一覧</div>
+      <div id="projects-list"></div>
     </div>
-    <div style="max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px;">
-      <div style="padding:20px 25px; border-bottom:1px solid var(--border); font-size:0.75rem; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.1em;">記録の管理</div>
-      <div id="records-list" style="padding:10px 0;"></div>
+    <button class="new-project-btn" onclick="createNewProject()">＋ 新しいプロジェクトを開始</button>
+  </div>
+
+  <!-- Settings View -->
+  <div id="view-settings" class="view">
+    <div class="settings-panel">
+      <div class="settings-row">
+        <span>Focus (min)</span>
+        <input type="number" id="set-focus" class="settings-input" oninput="saveSettings()">
+      </div>
+      <div class="settings-row">
+        <span>Break (min)</span>
+        <input type="number" id="set-break" class="settings-input" oninput="saveSettings()">
+      </div>
     </div>
     <div style="max-width:500px; margin:0 auto; text-align:center; padding-bottom:20px;">
-      <button onclick="clearAllData()" style="background:transparent; border:1px solid #6b2020; color:#e05a5a; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-transform:uppercase;">すべての記録を削除</button>
+      <button onclick="clearAllData()" style="background:transparent; border:1px solid #6b2020; color:#e05a5a; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-transform:uppercase;">すべてのデータを削除</button>
     </div>
   </div>
 </div>
 
 <nav>
   <button id="nav-timer" class="active" onclick="switchView('timer')">Timer</button>
+  <button id="nav-projects" onclick="switchView('projects')">Projects</button>
   <button id="nav-settings" onclick="switchView('settings')">Settings</button>
 </nav>
 
+<!-- Modal (汎用) -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <div class="modal-title" id="modal-title"></div>
     <div class="modal-sub" id="modal-sub"></div>
-    <input type="number" class="modal-input" id="modal-input" placeholder="0" inputmode="numeric">
+    <input class="modal-input" id="modal-input" placeholder="" inputmode="numeric">
     <div class="modal-buttons">
       <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">キャンセル</button>
-      <button class="modal-btn modal-btn-ok" id="modal-ok-btn">記録する</button>
+      <button class="modal-btn modal-btn-ok" id="modal-ok-btn">OK</button>
     </div>
   </div>
 </div>
 
 <script>
-var data = JSON.parse(localStorage.getItem('pomowriters_v11') || '{"settings":{"focus":20,"break":5},"days":{}}');
+// ── データ構造 ──────────────────────────────────────────
+// {
+//   settings: { focus, break },
+//   activeProjectId: "id",
+//   projects: {
+//     "id": {
+//       id, name, createdAt, days: { "YYYY-MM-DD": { sessions, chars } }
+//     }
+//   }
+// }
+
+var STORE_KEY = 'pomowriters_v12';
+
+function defaultData() {
+  var id = genId();
+  return {
+    settings: { focus: 20, break: 5 },
+    activeProjectId: id,
+    projects: {
+      [id]: { id: id, name: 'Project 1', createdAt: todayKey(), days: {} }
+    }
+  };
+}
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+    // migrate from old key
+    var oldRaw = localStorage.getItem('pomowriters_v11');
+    if (oldRaw) {
+      var old = JSON.parse(oldRaw);
+      var d = defaultData();
+      d.settings = old.settings || d.settings;
+      var proj = Object.values(d.projects)[0];
+      proj.name = 'Project 1（移行データ）';
+      proj.days = old.days || {};
+      return d;
+    }
+  } catch(e) {}
+  return defaultData();
+}
+
+var data = loadData();
 var state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, endTime: 0, startCount: 0, audioCtx: null };
 
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 
+function activeProject() { return data.projects[data.activeProjectId]; }
+
+// ── UI更新 ──────────────────────────────────────────────
 function updateUI() {
-  var m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
-  var s = (state.timeLeft % 60).toString().padStart(2, '0');
+  var m = Math.floor(state.timeLeft / 60).toString().padStart(2,'0');
+  var s = (state.timeLeft % 60).toString().padStart(2,'0');
   document.getElementById('timer-display').textContent = m + ':' + s;
   document.getElementById('mode-text').textContent = state.mode === 'focus' ? 'Focus' : 'Break';
+
+  var proj = activeProject();
+  document.getElementById('header-project-name').textContent = proj ? proj.name : '—';
+
   var tk = todayKey();
-  var day = data.days[tk] || { sessions: 0, chars: 0 };
+  var day = proj && proj.days[tk] ? proj.days[tk] : { sessions: 0, chars: 0 };
   document.getElementById('today-sessions').textContent = day.sessions;
   document.getElementById('today-chars').textContent = day.chars.toLocaleString();
+
+  // total = all projects
   var totalAll = 0;
-  for (var key in data.days) totalAll += (data.days[key].chars || 0);
+  for (var pid in data.projects) {
+    var p = data.projects[pid];
+    for (var dk in p.days) totalAll += (p.days[dk].chars || 0);
+  }
   document.getElementById('total-chars').textContent = totalAll.toLocaleString();
 }
 
-function showModal(title, sub, defaultVal, onOk, onCancel) {
+// ── モーダル ────────────────────────────────────────────
+function showModal(title, sub, defaultVal, inputMode, isText, onOk, onCancel) {
   var overlay = document.getElementById('modal-overlay');
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-sub').textContent = sub;
   var input = document.getElementById('modal-input');
   input.value = (defaultVal !== null && defaultVal !== undefined && defaultVal !== '') ? defaultVal : '';
+  input.inputMode = inputMode || 'numeric';
+  input.type = isText ? 'text' : 'number';
+  input.className = 'modal-input' + (isText ? ' text-input' : '');
   overlay.classList.add('active');
   setTimeout(function() { input.focus(); }, 100);
   var okBtn = document.getElementById('modal-ok-btn');
@@ -156,11 +260,12 @@ function showModal(title, sub, defaultVal, onOk, onCancel) {
   input.addEventListener('keydown', handleKey);
 }
 
+// ── タイマー操作 ────────────────────────────────────────
 function handlePlay() {
   if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (state.running) { toggleTimer(); return; }
   if (state.mode === 'focus') {
-    showModal('執筆開始', '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）', state.startCount || '',
+    showModal('執筆開始', '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）', state.startCount || '', 'numeric', false,
       function(val) { state.startCount = (val === '') ? state.startCount : (parseInt(val) || 0); toggleTimer(); }, null);
   } else {
     toggleTimer();
@@ -171,24 +276,21 @@ function toggleTimer() {
   if (state.running) {
     state.running = false;
     clearInterval(state.timerId);
-    document.getElementById('btn-play').textContent = '\u25B6';
+    document.getElementById('btn-play').innerHTML = '&#9654;';
   } else {
     state.running = true;
     state.endTime = Date.now() + (state.timeLeft * 1000);
     state.timerId = setInterval(tick, 200);
-    document.getElementById('btn-play').textContent = '\u23F8';
+    document.getElementById('btn-play').innerHTML = '&#9208;';
   }
 }
 
 function tick() {
   var diff = Math.round((state.endTime - Date.now()) / 1000);
   if (diff <= 0) {
-    state.timeLeft = 0;
-    updateUI();
-    complete();
+    state.timeLeft = 0; updateUI(); complete();
   } else {
-    state.timeLeft = diff;
-    updateUI();
+    state.timeLeft = diff; updateUI();
   }
 }
 
@@ -211,16 +313,17 @@ function complete() {
   document.getElementById('timer-card').classList.add('flash-red');
   setTimeout(function() {
     if (state.mode === 'focus') {
-      showModal('セッション終了', '現在の文字数を入力してください\n（空欄なら変化なしで記録）', '',
+      showModal('セッション終了', '現在の文字数を入力してください\n（空欄なら変化なしで記録）', '', 'numeric', false,
         function(val) {
           var endCount = (val === '') ? state.startCount : (parseInt(val) || state.startCount);
           var diff = Math.max(0, endCount - state.startCount);
           state.startCount = endCount;
           var tk = todayKey();
-          if (!data.days[tk]) data.days[tk] = { sessions: 0, chars: 0 };
-          data.days[tk].sessions += 1;
-          data.days[tk].chars += diff;
-          localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+          var proj = activeProject();
+          if (!proj.days[tk]) proj.days[tk] = { sessions: 0, chars: 0 };
+          proj.days[tk].sessions += 1;
+          proj.days[tk].chars += diff;
+          save();
           finishComplete();
         },
         function() { finishComplete(); });
@@ -233,30 +336,9 @@ function complete() {
 function finishComplete() {
   state.mode = (state.mode === 'focus') ? 'break' : 'focus';
   state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-  document.getElementById('btn-play').textContent = '\u25B6';
+  document.getElementById('btn-play').innerHTML = '&#9654;';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
-}
-
-function switchView(name) {
-  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
-  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('view-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'settings') {
-    document.getElementById('set-focus').value = data.settings.focus;
-    document.getElementById('set-break').value = data.settings.break;
-    renderRecordsList();
-  }
-}
-
-function saveSettings() {
-  var f = parseInt(document.getElementById('set-focus').value) || 20;
-  var b = parseInt(document.getElementById('set-break').value) || 5;
-  data.settings.focus = f;
-  data.settings.break = b;
-  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
-  if (!state.running) resetTimer();
 }
 
 function resetTimer() {
@@ -266,7 +348,7 @@ function resetTimer() {
   state.mode = 'focus';
   state.timeLeft = data.settings.focus * 60;
   state.startCount = 0;
-  document.getElementById('btn-play').textContent = '\u25B6';
+  document.getElementById('btn-play').innerHTML = '&#9654;';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
@@ -277,63 +359,143 @@ function skipSession() {
   clearInterval(state.timerId);
   state.mode = (state.mode === 'focus') ? 'break' : 'focus';
   state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-  document.getElementById('btn-play').textContent = '\u25B6';
+  document.getElementById('btn-play').innerHTML = '&#9654;';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
 
-function renderRecordsList() {
-  var container = document.getElementById('records-list');
-  var keys = Object.keys(data.days).sort().reverse();
-  if (keys.length === 0) {
-    container.innerHTML = '<div style="padding:20px 25px; color:var(--text-sub); font-size:0.85rem;">記録はありません</div>';
-    return;
-  }
+// ── プロジェクト操作 ────────────────────────────────────
+function projectTotalChars(proj) {
+  var total = 0;
+  for (var dk in proj.days) total += (proj.days[dk].chars || 0);
+  return total;
+}
+function projectTotalSessions(proj) {
+  var total = 0;
+  for (var dk in proj.days) total += (proj.days[dk].sessions || 0);
+  return total;
+}
+function projectLastDate(proj) {
+  var keys = Object.keys(proj.days).sort();
+  return keys.length ? keys[keys.length - 1] : proj.createdAt;
+}
+
+function renderProjectsList() {
+  var container = document.getElementById('projects-list');
+  var ids = Object.keys(data.projects).sort(function(a, b) {
+    return projectLastDate(data.projects[b]).localeCompare(projectLastDate(data.projects[a]));
+  });
+  if (!ids.length) { container.innerHTML = '<div style="color:var(--text-sub);padding:20px;font-size:0.85rem;">プロジェクトがありません</div>'; return; }
   container.innerHTML = '';
-  keys.forEach(function(dateKey) {
-    var day = data.days[dateKey];
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:14px 25px; border-bottom:1px solid var(--border);';
-    row.innerHTML =
-      '<span style="font-size:0.85rem;">' + dateKey + '</span>' +
-      '<span style="font-size:0.8rem; color:var(--text-sub);">' + day.sessions + 'セッション&#12288;' + day.chars.toLocaleString() + '文字</span>' +
-      '<div style="display:flex;gap:8px;">' +
-        '<button onclick="editRecord(\'' + dateKey + '\')" style="background:transparent;border:1px solid var(--border);color:var(--text-sub);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">編集</button>' +
-        '<button onclick="deleteRecord(\'' + dateKey + '\')" style="background:transparent;border:1px solid #6b2020;color:var(--accent);padding:5px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">削除</button>' +
+  ids.forEach(function(pid) {
+    var proj = data.projects[pid];
+    var isActive = pid === data.activeProjectId;
+    var chars = projectTotalChars(proj);
+    var sessions = projectTotalSessions(proj);
+    var item = document.createElement('div');
+    item.className = 'project-item' + (isActive ? ' active-project' : '');
+    item.innerHTML =
+      '<div class="project-item-left">' +
+        '<div class="project-item-name' + (isActive ? ' is-active' : '') + '">' +
+          (isActive ? '▶ ' : '') + escHtml(proj.name) +
+        '</div>' +
+        '<div class="project-item-meta">開始: ' + proj.createdAt + '　最終: ' + projectLastDate(proj) + '</div>' +
+      '</div>' +
+      '<div class="project-item-stats">' + chars.toLocaleString() + ' 文字<br>' + sessions + ' session' + (sessions !== 1 ? 's' : '') + '</div>' +
+      '<div class="project-item-actions">' +
+        (!isActive ? '<button class="proj-btn proj-btn-switch" onclick="switchProject(\'' + pid + '\')">切替</button>' : '') +
+        '<button class="proj-btn" onclick="renameProject(\'' + pid + '\')">名前変更</button>' +
+        (!isActive ? '<button class="proj-btn" style="border-color:#6b2020;color:var(--accent);" onclick="deleteProject(\'' + pid + '\')">削除</button>' : '') +
       '</div>';
-    container.appendChild(row);
+    container.appendChild(item);
   });
 }
 
-function editRecord(dateKey) {
-  var day = data.days[dateKey];
-  showModal(dateKey + ' の記録を修正', '文字数を入力（現在：' + day.chars.toLocaleString() + '文字）', day.chars,
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function createNewProject() {
+  showModal('新しいプロジェクト', 'プロジェクト名を入力してください', '', 'text', true,
     function(val) {
-      var newChars = parseInt(val);
-      if (isNaN(newChars) || newChars < 0) { alert('正しい数値を入力してください'); return; }
-      data.days[dateKey].chars = newChars;
-      localStorage.setItem('pomowriters_v11', JSON.stringify(data));
-      updateUI();
-      renderRecordsList();
+      var name = val.trim() || ('Project ' + (Object.keys(data.projects).length + 1));
+      var id = genId();
+      data.projects[id] = { id: id, name: name, createdAt: todayKey(), days: {} };
+      data.activeProjectId = id;
+      save();
+      resetTimer();
+      renderProjectsList();
+      switchView('timer');
     }, null);
 }
 
-function deleteRecord(dateKey) {
-  if (!confirm(dateKey + ' の記録を削除しますか？')) return;
-  delete data.days[dateKey];
-  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+function switchProject(pid) {
+  if (!data.projects[pid]) return;
+  data.activeProjectId = pid;
+  save();
+  resetTimer();
+  renderProjectsList();
   updateUI();
-  renderRecordsList();
+  switchView('timer');
+}
+
+function renameProject(pid) {
+  var proj = data.projects[pid];
+  if (!proj) return;
+  showModal('プロジェクト名を変更', '新しい名前を入力してください', proj.name, 'text', true,
+    function(val) {
+      var name = val.trim();
+      if (!name) return;
+      proj.name = name;
+      save();
+      updateUI();
+      renderProjectsList();
+    }, null);
+}
+
+function deleteProject(pid) {
+  if (pid === data.activeProjectId) { alert('現在使用中のプロジェクトは削除できません。'); return; }
+  var proj = data.projects[pid];
+  if (!proj) return;
+  if (!confirm('「' + proj.name + '」を削除しますか？この操作は取り消せません。')) return;
+  delete data.projects[pid];
+  save();
+  renderProjectsList();
+  updateUI();
+}
+
+// ── ナビゲーション ──────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'settings') {
+    document.getElementById('set-focus').value = data.settings.focus;
+    document.getElementById('set-break').value = data.settings.break;
+  }
+  if (name === 'projects') renderProjectsList();
+}
+
+function saveSettings() {
+  var f = parseInt(document.getElementById('set-focus').value) || 20;
+  var b = parseInt(document.getElementById('set-break').value) || 5;
+  data.settings.focus = f;
+  data.settings.break = b;
+  save();
+  if (!state.running) resetTimer();
 }
 
 function clearAllData() {
-  if (!confirm('すべての記録を削除します。よろしいですか？')) return;
-  data.days = {};
-  localStorage.setItem('pomowriters_v11', JSON.stringify(data));
+  if (!confirm('すべてのプロジェクトとデータを削除します。よろしいですか？')) return;
+  localStorage.removeItem(STORE_KEY);
+  data = defaultData();
+  save();
+  resetTimer();
   updateUI();
-  renderRecordsList();
 }
 
+// ── 初期化 ──────────────────────────────────────────────
 updateUI();
 </script>
 </body>
