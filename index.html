@@ -9,71 +9,85 @@
 :root { --bg: #0b0e14; --surface: #161b22; --accent: #e05a5a; --text-main: #f0f6fc; --text-sub: #8b949e; --border: #30363d; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); height: 100vh; overflow: hidden; }
-header { padding: 30px 20px 10px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); }
+header { padding: 24px 20px 10px; display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); }
 h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
 .header-right { text-align: right; }
-.project-badge { font-size: 0.65rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
-.project-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+.project-badge { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+.project-name { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
 .total-label { font-size: 0.6rem; color: var(--text-sub); text-transform: uppercase; margin-top: 4px; }
-.total-count { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--accent); }
-#content { height: calc(100% - 170px); overflow-y: auto; padding: 40px 20px; }
+.total-count { font-family: 'JetBrains Mono', monospace; font-size: 1.3rem; color: var(--accent); }
+#content { height: calc(100% - 160px); overflow-y: auto; padding: 30px 20px; }
 .view { display: none; }
 .view.active { display: block; }
 
 /* Timer */
-.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 50px 20px; text-align: center; max-width: 500px; margin: 0 auto 30px; }
-.mode-status { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--text-sub); margin-bottom: 15px; }
-.timer-display { font-family: 'JetBrains Mono', monospace; font-size: 5rem; font-weight: 500; margin-bottom: 40px; }
+.timer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px 20px 30px; text-align: center; max-width: 500px; margin: 0 auto 20px; }
+.mode-status { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3em; color: var(--text-sub); margin-bottom: 10px; }
+.timer-display { font-family: 'JetBrains Mono', monospace; font-size: 5rem; font-weight: 500; margin-bottom: 16px; }
+.activity-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 28px; }
+.act-chip { background: transparent; border: 1px solid var(--border); color: var(--text-sub); border-radius: 20px; padding: 5px 14px; font-size: 0.78rem; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.act-chip.selected { border-color: var(--accent); color: var(--accent); background: rgba(224,90,90,0.08); }
 .controls { display: flex; justify-content: center; align-items: center; gap: 30px; }
 .btn { background: none; border: none; color: var(--text-sub); font-size: 0.8rem; cursor: pointer; padding: 10px; text-transform: uppercase; }
-.btn-play { background: var(--accent); color: white; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 20px rgba(224,90,90,0.4); }
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 500px; margin: 0 auto; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
-.stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; display: block; }
-.stat-lbl { font-size: 0.7rem; color: var(--text-sub); margin-top: 8px; }
+.btn-play { background: var(--accent); color: white; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 4px 20px rgba(224,90,90,0.4); border: none; cursor: pointer; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 500px; margin: 0 auto; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+.stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; display: block; }
+.stat-lbl { font-size: 0.7rem; color: var(--text-sub); margin-top: 6px; }
 
-/* Projects View */
-.section-header { font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 0 12px 0; margin-bottom: 4px; }
-.project-list { max-width: 500px; margin: 0 auto 24px; }
-.project-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.project-item.active-project { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.project-item-left { flex: 1; min-width: 0; }
-.project-item-name { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Projects */
+.section-header { font-size: 0.72rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.1em; padding: 0 0 10px 0; }
+.project-list { max-width: 500px; margin: 0 auto 20px; }
+.project-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; }
+.project-item.active-project { border-color: var(--accent); }
+.project-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.project-item-name { font-size: 0.95rem; font-weight: 600; }
 .project-item-name.is-active { color: var(--accent); }
-.project-item-meta { font-size: 0.75rem; color: var(--text-sub); }
-.project-item-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-sub); text-align: right; flex-shrink: 0; }
+.project-item-meta { font-size: 0.72rem; color: var(--text-sub); margin-top: 2px; }
 .project-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.proj-btn { background: transparent; border: 1px solid var(--border); color: var(--text-sub); padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
+.proj-btn { background: transparent; border: 1px solid var(--border); color: var(--text-sub); padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
 .proj-btn-switch { border-color: var(--accent); color: var(--accent); }
-.new-project-btn { display: block; width: 100%; max-width: 500px; margin: 0 auto 30px; padding: 14px; background: transparent; border: 1px dashed var(--border); color: var(--text-sub); border-radius: 12px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; transition: border-color 0.2s, color 0.2s; }
-.new-project-btn:hover { border-color: var(--accent); color: var(--accent); }
+.activity-breakdown { display: flex; flex-wrap: wrap; gap: 6px; }
+.act-tag { font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; background: #1e242d; border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; color: var(--text-sub); }
+.act-tag span { color: var(--text-main); }
+.new-project-btn { display: block; width: 100%; max-width: 500px; margin: 0 auto 30px; padding: 14px; background: transparent; border: 1px dashed var(--border); color: var(--text-sub); border-radius: 12px; cursor: pointer; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; }
 
 /* Settings */
-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 30px; }
-nav button { background: none; border: none; color: var(--text-sub); font-size: 0.8rem; text-transform: uppercase; cursor: pointer; width: 120px; }
+.settings-panel { max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
+.settings-row { display:flex; justify-content:space-between; align-items:center; padding:22px 25px; border-bottom:1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-input { background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px; font-family:'JetBrains Mono',monospace; font-size:0.95rem; }
+.category-mgmt { max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
+.cat-header { padding:14px 25px; font-size:0.72rem; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.1em; border-bottom:1px solid var(--border); }
+.cat-row { display:flex; justify-content:space-between; align-items:center; padding:14px 25px; border-bottom:1px solid var(--border); }
+.cat-row:last-child { border-bottom:none; }
+.cat-name { font-size:0.88rem; }
+.cat-del { background:transparent; border:1px solid #6b2020; color:var(--accent); padding:4px 10px; border-radius:5px; cursor:pointer; font-size:0.72rem; }
+.cat-add-row { padding:14px 25px; display:flex; gap:8px; }
+.cat-add-input { flex:1; background:#000; border:1px solid var(--border); color:var(--text-main); padding:7px 10px; border-radius:6px; font-size:0.85rem; outline:none; }
+.cat-add-input:focus { border-color:var(--accent); }
+.cat-add-btn { background:var(--accent); color:white; border:none; border-radius:6px; padding:7px 16px; cursor:pointer; font-size:0.82rem; }
+
+/* Nav */
+nav { position: fixed; bottom: 0; width: 100%; height: 72px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 20px; }
+nav button { background: none; border: none; color: var(--text-sub); font-size: 0.78rem; text-transform: uppercase; cursor: pointer; width: 100px; }
 nav button.active { color: var(--accent); font-weight: 600; border-top: 2px solid var(--accent); }
 .flash-red { animation: flash 0.5s infinite; }
-@keyframes flash { 0% { background: var(--surface); } 50% { background: #4a1515; } 100% { background: var(--surface); } }
+@keyframes flash { 0%{background:var(--surface);}50%{background:#4a1515;}100%{background:var(--surface);} }
 
 /* Modal */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; pointer-events: none; }
-.modal-overlay.active { display: flex; pointer-events: auto; }
-.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px 28px; width: 90%; max-width: 380px; text-align: center; }
-.modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
-.modal-sub { font-size: 0.78rem; color: var(--text-sub); margin-bottom: 20px; line-height: 1.7; white-space: pre-line; }
-.modal-input { width: 100%; background: #000; border: 1px solid var(--border); color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 20px; outline: none; }
-.modal-input.text-input { font-size: 1rem; font-family: 'Inter', sans-serif; }
-.modal-input:focus { border-color: var(--accent); }
-.modal-buttons { display: flex; gap: 12px; justify-content: center; }
-.modal-btn { padding: 10px 28px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif; }
-.modal-btn-ok { background: var(--accent); color: white; }
-.modal-btn-cancel { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
-
-/* Settings panel */
-.settings-panel { max-width:500px; margin:0 auto; background:var(--surface); border-radius:15px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
-.settings-row { display:flex; justify-content:space-between; align-items:center; padding:25px; border-bottom:1px solid var(--border); }
-.settings-row:last-child { border-bottom: none; }
-.settings-input { background:#000; border:1px solid var(--border); color:var(--accent); width:80px; text-align:center; padding:5px; border-radius:5px; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--accent); }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; pointer-events:none; }
+.modal-overlay.active { display:flex; pointer-events:auto; }
+.modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px 24px; width:90%; max-width:380px; text-align:center; }
+.modal-title { font-size:1rem; font-weight:600; margin-bottom:8px; }
+.modal-sub { font-size:0.78rem; color:var(--text-sub); margin-bottom:16px; line-height:1.7; white-space:pre-line; }
+.modal-input { width:100%; background:#000; border:1px solid var(--border); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:1.5rem; text-align:center; padding:10px; border-radius:8px; margin-bottom:16px; outline:none; }
+.modal-input.text-input { font-size:1rem; font-family:'Inter',sans-serif; }
+.modal-input:focus { border-color:var(--accent); }
+.modal-buttons { display:flex; gap:12px; justify-content:center; }
+.modal-btn { padding:10px 24px; border-radius:8px; border:none; cursor:pointer; font-size:0.85rem; font-family:'Inter',sans-serif; }
+.modal-btn-ok { background:var(--accent); color:white; }
+.modal-btn-cancel { background:transparent; color:var(--text-sub); border:1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -89,14 +103,16 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 </header>
 
 <div id="content">
-  <!-- Timer View -->
+
+  <!-- Timer -->
   <div id="view-timer" class="view active">
     <div class="timer-card" id="timer-card">
       <div class="mode-status" id="mode-text">Focus</div>
       <div class="timer-display" id="timer-display">20:00</div>
+      <div class="activity-row" id="activity-row"></div>
       <div class="controls">
         <button class="btn" onclick="resetTimer()">Reset</button>
-        <button class="btn btn-play" id="btn-play" onclick="handlePlay()">&#9654;</button>
+        <button class="btn-play" id="btn-play" onclick="handlePlay()">&#9654;</button>
         <button class="btn" onclick="skipSession()">Skip</button>
       </div>
     </div>
@@ -106,7 +122,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
     </div>
   </div>
 
-  <!-- Projects View -->
+  <!-- Projects -->
   <div id="view-projects" class="view">
     <div class="project-list">
       <div class="section-header">プロジェクト一覧</div>
@@ -115,7 +131,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
     <button class="new-project-btn" onclick="createNewProject()">＋ 新しいプロジェクトを開始</button>
   </div>
 
-  <!-- Settings View -->
+  <!-- Settings -->
   <div id="view-settings" class="view">
     <div class="settings-panel">
       <div class="settings-row">
@@ -127,10 +143,19 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
         <input type="number" id="set-break" class="settings-input" oninput="saveSettings()">
       </div>
     </div>
-    <div style="max-width:500px; margin:0 auto; text-align:center; padding-bottom:20px;">
-      <button onclick="clearAllData()" style="background:transparent; border:1px solid #6b2020; color:#e05a5a; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:0.8rem; text-transform:uppercase;">すべてのデータを削除</button>
+    <div class="category-mgmt">
+      <div class="cat-header">作業カテゴリの管理</div>
+      <div id="cat-list"></div>
+      <div class="cat-add-row">
+        <input type="text" id="cat-add-input" class="cat-add-input" placeholder="新しいカテゴリ名" maxlength="20">
+        <button class="cat-add-btn" onclick="addCategory()">追加</button>
+      </div>
+    </div>
+    <div style="max-width:500px;margin:0 auto;text-align:center;padding-bottom:20px;">
+      <button onclick="clearAllData()" style="background:transparent;border:1px solid #6b2020;color:#e05a5a;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:0.8rem;text-transform:uppercase;">すべてのデータを削除</button>
     </div>
   </div>
+
 </div>
 
 <nav>
@@ -139,12 +164,11 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   <button id="nav-settings" onclick="switchView('settings')">Settings</button>
 </nav>
 
-<!-- Modal (汎用) -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal-box">
     <div class="modal-title" id="modal-title"></div>
     <div class="modal-sub" id="modal-sub"></div>
-    <input class="modal-input" id="modal-input" placeholder="" inputmode="numeric">
+    <input class="modal-input" id="modal-input" placeholder="">
     <div class="modal-buttons">
       <button class="modal-btn modal-btn-cancel" id="modal-cancel-btn">キャンセル</button>
       <button class="modal-btn modal-btn-ok" id="modal-ok-btn">OK</button>
@@ -153,90 +177,100 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 </div>
 
 <script>
-// ── データ構造 ──────────────────────────────────────────
-// {
-//   settings: { focus, break },
-//   activeProjectId: "id",
-//   projects: {
-//     "id": {
-//       id, name, createdAt, days: { "YYYY-MM-DD": { sessions, chars } }
-//     }
-//   }
-// }
-
-var STORE_KEY = 'pomowriters_v12';
+var STORE_KEY = 'pomowriters_v13';
+var DEFAULT_CATEGORIES = ['執筆', '読書', '調査', 'その他'];
+var WRITING_CATEGORY = '執筆';
 
 function defaultData() {
   var id = genId();
   return {
     settings: { focus: 20, break: 5 },
+    categories: DEFAULT_CATEGORIES.slice(),
     activeProjectId: id,
-    projects: {
-      [id]: { id: id, name: 'Project 1', createdAt: todayKey(), days: {} }
-    }
+    projects: { [id]: { id: id, name: 'Project 1', createdAt: todayKey(), days: {} } }
   };
 }
 
 function loadData() {
   try {
     var raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
-    // migrate from old key
-    var oldRaw = localStorage.getItem('pomowriters_v11');
+    if (raw) { var d = JSON.parse(raw); if (!d.categories) d.categories = DEFAULT_CATEGORIES.slice(); return d; }
+    var oldRaw = localStorage.getItem('pomowriters_v12');
     if (oldRaw) {
       var old = JSON.parse(oldRaw);
-      var d = defaultData();
-      d.settings = old.settings || d.settings;
-      var proj = Object.values(d.projects)[0];
+      var d2 = defaultData();
+      d2.settings = old.settings || d2.settings;
+      var proj = Object.values(d2.projects)[0];
       proj.name = 'Project 1（移行データ）';
-      proj.days = old.days || {};
-      return d;
+      for (var pid in (old.projects || {})) {
+        var op = old.projects[pid];
+        for (var dayK in (op.days || {})) {
+          var od = op.days[dayK];
+          proj.days[dayK] = { sessions: od.sessions||0, chars: od.chars||0,
+            byCategory: { '執筆': { sessions: od.sessions||0, chars: od.chars||0 } } };
+        }
+      }
+      return d2;
     }
   } catch(e) {}
   return defaultData();
 }
 
 var data = loadData();
-var state = { running: false, mode: 'focus', timeLeft: data.settings.focus * 60, timerId: null, endTime: 0, startCount: 0, audioCtx: null };
+var state = {
+  running: false, mode: 'focus',
+  timeLeft: data.settings.focus * 60,
+  timerId: null, endTime: 0, startCount: 0,
+  currentCategory: data.categories[0] || WRITING_CATEGORY,
+  audioCtx: null
+};
 
 function save() { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function todayKey() { return new Date().toISOString().split('T')[0]; }
-
 function activeProject() { return data.projects[data.activeProjectId]; }
+function isWriting() { return state.currentCategory === WRITING_CATEGORY; }
 
-// ── UI更新 ──────────────────────────────────────────────
-function updateUI() {
-  var m = Math.floor(state.timeLeft / 60).toString().padStart(2,'0');
-  var s = (state.timeLeft % 60).toString().padStart(2,'0');
-  document.getElementById('timer-display').textContent = m + ':' + s;
-  document.getElementById('mode-text').textContent = state.mode === 'focus' ? 'Focus' : 'Break';
-
-  var proj = activeProject();
-  document.getElementById('header-project-name').textContent = proj ? proj.name : '—';
-
-  var tk = todayKey();
-  var day = proj && proj.days[tk] ? proj.days[tk] : { sessions: 0, chars: 0 };
-  document.getElementById('today-sessions').textContent = day.sessions;
-  document.getElementById('today-chars').textContent = day.chars.toLocaleString();
-
-  // total = current project only
-  var totalAll = proj ? projectTotalChars(proj) : 0;
-  document.getElementById('total-chars').textContent = totalAll.toLocaleString();
+// ── Activity chips ──────────────────────────────────────
+function renderActivityChips() {
+  var row = document.getElementById('activity-row');
+  row.innerHTML = '';
+  data.categories.forEach(function(cat) {
+    var btn = document.createElement('button');
+    btn.className = 'act-chip' + (cat === state.currentCategory ? ' selected' : '');
+    btn.textContent = cat;
+    btn.onclick = function() { state.currentCategory = cat; renderActivityChips(); };
+    row.appendChild(btn);
+  });
 }
 
-// ── モーダル ────────────────────────────────────────────
-function showModal(title, sub, defaultVal, inputMode, isText, onOk, onCancel) {
+// ── UI ──────────────────────────────────────────────────
+function updateUI() {
+  var m = Math.floor(state.timeLeft/60).toString().padStart(2,'0');
+  var s = (state.timeLeft%60).toString().padStart(2,'0');
+  document.getElementById('timer-display').textContent = m+':'+s;
+  document.getElementById('mode-text').textContent = state.mode==='focus' ? 'Focus' : 'Break';
+  var proj = activeProject();
+  document.getElementById('header-project-name').textContent = proj ? proj.name : '—';
+  var tk = todayKey();
+  var day = proj && proj.days[tk] ? proj.days[tk] : { sessions:0, chars:0 };
+  document.getElementById('today-sessions').textContent = day.sessions||0;
+  document.getElementById('today-chars').textContent = (day.chars||0).toLocaleString();
+  document.getElementById('total-chars').textContent = (proj ? projectTotalChars(proj) : 0).toLocaleString();
+}
+
+// ── Modal ───────────────────────────────────────────────
+function showModal(title, sub, defaultVal, isText, onOk, onCancel) {
   var overlay = document.getElementById('modal-overlay');
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-sub').textContent = sub;
   var input = document.getElementById('modal-input');
-  input.value = (defaultVal !== null && defaultVal !== undefined && defaultVal !== '') ? defaultVal : '';
-  input.inputMode = inputMode || 'numeric';
+  input.value = (defaultVal!==null && defaultVal!==undefined && defaultVal!=='') ? defaultVal : '';
   input.type = isText ? 'text' : 'number';
-  input.className = 'modal-input' + (isText ? ' text-input' : '');
+  input.inputMode = isText ? 'text' : 'numeric';
+  input.className = 'modal-input'+(isText?' text-input':'');
   overlay.classList.add('active');
-  setTimeout(function() { input.focus(); }, 100);
+  setTimeout(function(){ input.focus(); }, 100);
   var okBtn = document.getElementById('modal-ok-btn');
   var cancelBtn = document.getElementById('modal-cancel-btn');
   function cleanup() {
@@ -246,252 +280,268 @@ function showModal(title, sub, defaultVal, inputMode, isText, onOk, onCancel) {
     input.removeEventListener('keydown', handleKey);
   }
   function handleOk() { cleanup(); onOk(input.value); }
-  function handleCancel() { cleanup(); if (onCancel) onCancel(); }
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.isComposing) handleOk();
-    if (e.key === 'Escape') handleCancel();
-  }
+  function handleCancel() { cleanup(); if(onCancel) onCancel(); }
+  function handleKey(e) { if(e.key==='Enter'&&!e.isComposing) handleOk(); if(e.key==='Escape') handleCancel(); }
   okBtn.addEventListener('click', handleOk);
   cancelBtn.addEventListener('click', handleCancel);
   input.addEventListener('keydown', handleKey);
 }
 
-// ── タイマー操作 ────────────────────────────────────────
+// ── Timer ───────────────────────────────────────────────
 function handlePlay() {
-  if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!state.audioCtx) state.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
   if (state.running) { toggleTimer(); return; }
-  if (state.mode === 'focus') {
-    showModal('執筆開始', '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）', state.startCount || '', 'numeric', false,
-      function(val) { state.startCount = (val === '') ? state.startCount : (parseInt(val) || 0); toggleTimer(); }, null);
-  } else {
-    toggleTimer();
-  }
+  if (state.mode==='focus' && isWriting()) {
+    showModal('執筆開始', '現在の文字数を入力してください\n（空欄なら前回値を引き継ぎ）', state.startCount||'', false,
+      function(val){ state.startCount=(val==='')?state.startCount:(parseInt(val)||0); toggleTimer(); }, null);
+  } else { toggleTimer(); }
 }
 
 function toggleTimer() {
   if (state.running) {
-    state.running = false;
-    clearInterval(state.timerId);
-    document.getElementById('btn-play').innerHTML = '&#9654;';
+    state.running=false; clearInterval(state.timerId);
+    document.getElementById('btn-play').innerHTML='&#9654;';
   } else {
-    state.running = true;
-    state.endTime = Date.now() + (state.timeLeft * 1000);
-    state.timerId = setInterval(tick, 200);
-    document.getElementById('btn-play').innerHTML = '&#9208;';
+    state.running=true; state.endTime=Date.now()+state.timeLeft*1000;
+    state.timerId=setInterval(tick,200);
+    document.getElementById('btn-play').innerHTML='&#9208;';
   }
 }
 
 function tick() {
-  var diff = Math.round((state.endTime - Date.now()) / 1000);
-  if (diff <= 0) {
-    state.timeLeft = 0; updateUI(); complete();
-  } else {
-    state.timeLeft = diff; updateUI();
-  }
+  var diff=Math.round((state.endTime-Date.now())/1000);
+  if(diff<=0){ state.timeLeft=0; updateUI(); complete(); }
+  else { state.timeLeft=diff; updateUI(); }
 }
 
 function playSound() {
-  if (!state.audioCtx) return;
-  var osc = state.audioCtx.createOscillator();
-  var gain = state.audioCtx.createGain();
+  if(!state.audioCtx) return;
+  var osc=state.audioCtx.createOscillator(), gain=state.audioCtx.createGain();
   osc.connect(gain); gain.connect(state.audioCtx.destination);
-  osc.frequency.setValueAtTime(880, state.audioCtx.currentTime);
-  gain.gain.setValueAtTime(0, state.audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.2, state.audioCtx.currentTime + 0.1);
-  gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + 1);
-  osc.start(); osc.stop(state.audioCtx.currentTime + 1);
+  osc.frequency.setValueAtTime(880,state.audioCtx.currentTime);
+  gain.gain.setValueAtTime(0,state.audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.2,state.audioCtx.currentTime+0.1);
+  gain.gain.exponentialRampToValueAtTime(0.001,state.audioCtx.currentTime+1);
+  osc.start(); osc.stop(state.audioCtx.currentTime+1);
 }
 
 function complete() {
-  state.running = false;
-  clearInterval(state.timerId);
-  playSound();
+  state.running=false; clearInterval(state.timerId); playSound();
   document.getElementById('timer-card').classList.add('flash-red');
-  setTimeout(function() {
-    if (state.mode === 'focus') {
-      showModal('セッション終了', '現在の文字数を入力してください\n（空欄なら変化なしで記録）', '', 'numeric', false,
-        function(val) {
-          var endCount = (val === '') ? state.startCount : (parseInt(val) || state.startCount);
-          var diff = Math.max(0, endCount - state.startCount);
-          state.startCount = endCount;
-          var tk = todayKey();
-          var proj = activeProject();
-          if (!proj.days[tk]) proj.days[tk] = { sessions: 0, chars: 0 };
-          proj.days[tk].sessions += 1;
-          proj.days[tk].chars += diff;
-          save();
-          finishComplete();
-        },
-        function() { finishComplete(); });
-    } else {
-      finishComplete();
-    }
+  setTimeout(function(){
+    if(state.mode==='focus') {
+      if(isWriting()) {
+        showModal('セッション終了（執筆）','現在の文字数を入力してください\n（空欄なら変化なしで記録）','',false,
+          function(val){
+            var endCount=(val==='')?state.startCount:(parseInt(val)||state.startCount);
+            var diff=Math.max(0,endCount-state.startCount);
+            state.startCount=endCount;
+            recordSession(state.currentCategory,diff);
+            finishComplete();
+          }, function(){ finishComplete(); });
+      } else {
+        recordSession(state.currentCategory,0);
+        finishComplete();
+      }
+    } else { finishComplete(); }
   }, 500);
 }
 
+function recordSession(category, chars) {
+  var tk=todayKey(), proj=activeProject();
+  if(!proj.days[tk]) proj.days[tk]={sessions:0,chars:0,byCategory:{}};
+  var day=proj.days[tk];
+  day.sessions=(day.sessions||0)+1;
+  day.chars=(day.chars||0)+chars;
+  if(!day.byCategory) day.byCategory={};
+  if(!day.byCategory[category]) day.byCategory[category]={sessions:0,chars:0};
+  day.byCategory[category].sessions+=1;
+  day.byCategory[category].chars+=chars;
+  save();
+}
+
 function finishComplete() {
-  state.mode = (state.mode === 'focus') ? 'break' : 'focus';
-  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-  document.getElementById('btn-play').innerHTML = '&#9654;';
+  state.mode=(state.mode==='focus')?'break':'focus';
+  state.timeLeft=(state.mode==='focus'?data.settings.focus:data.settings.break)*60;
+  document.getElementById('btn-play').innerHTML='&#9654;';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
 
 function resetTimer() {
   document.getElementById('modal-overlay').classList.remove('active');
-  state.running = false;
-  clearInterval(state.timerId);
-  state.mode = 'focus';
-  state.timeLeft = data.settings.focus * 60;
-  state.startCount = 0;
-  document.getElementById('btn-play').innerHTML = '&#9654;';
+  state.running=false; clearInterval(state.timerId);
+  state.mode='focus'; state.timeLeft=data.settings.focus*60; state.startCount=0;
+  document.getElementById('btn-play').innerHTML='&#9654;';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
 
 function skipSession() {
-  if (!confirm('このセッションをスキップしますか？（記録されません）')) return;
-  state.running = false;
-  clearInterval(state.timerId);
-  state.mode = (state.mode === 'focus') ? 'break' : 'focus';
-  state.timeLeft = (state.mode === 'focus' ? data.settings.focus : data.settings.break) * 60;
-  document.getElementById('btn-play').innerHTML = '&#9654;';
+  if(!confirm('このセッションをスキップしますか？（記録されません）')) return;
+  state.running=false; clearInterval(state.timerId);
+  state.mode=(state.mode==='focus')?'break':'focus';
+  state.timeLeft=(state.mode==='focus'?data.settings.focus:data.settings.break)*60;
+  document.getElementById('btn-play').innerHTML='&#9654;';
   document.getElementById('timer-card').classList.remove('flash-red');
   updateUI();
 }
 
-// ── プロジェクト操作 ────────────────────────────────────
+// ── Project helpers ─────────────────────────────────────
 function projectTotalChars(proj) {
-  var total = 0;
-  for (var dk in proj.days) total += (proj.days[dk].chars || 0);
-  return total;
+  var t=0; for(var dk in proj.days) t+=(proj.days[dk].chars||0); return t;
 }
-function projectTotalSessions(proj) {
-  var total = 0;
-  for (var dk in proj.days) total += (proj.days[dk].sessions || 0);
-  return total;
+function projectCategoryTotals(proj) {
+  var result={};
+  for(var dk in proj.days) {
+    var bc=proj.days[dk].byCategory||{};
+    for(var cat in bc) {
+      if(!result[cat]) result[cat]={sessions:0,chars:0};
+      result[cat].sessions+=(bc[cat].sessions||0);
+      result[cat].chars+=(bc[cat].chars||0);
+    }
+  }
+  return result;
 }
 function projectLastDate(proj) {
-  var keys = Object.keys(proj.days).sort();
-  return keys.length ? keys[keys.length - 1] : proj.createdAt;
+  var keys=Object.keys(proj.days).sort();
+  return keys.length?keys[keys.length-1]:proj.createdAt;
 }
 
+// ── Projects list ───────────────────────────────────────
 function renderProjectsList() {
-  var container = document.getElementById('projects-list');
-  var ids = Object.keys(data.projects).sort(function(a, b) {
+  var container=document.getElementById('projects-list');
+  var ids=Object.keys(data.projects).sort(function(a,b){
     return projectLastDate(data.projects[b]).localeCompare(projectLastDate(data.projects[a]));
   });
-  if (!ids.length) { container.innerHTML = '<div style="color:var(--text-sub);padding:20px;font-size:0.85rem;">プロジェクトがありません</div>'; return; }
-  container.innerHTML = '';
-  ids.forEach(function(pid) {
-    var proj = data.projects[pid];
-    var isActive = pid === data.activeProjectId;
-    var chars = projectTotalChars(proj);
-    var sessions = projectTotalSessions(proj);
-    var item = document.createElement('div');
-    item.className = 'project-item' + (isActive ? ' active-project' : '');
-    item.innerHTML =
-      '<div class="project-item-left">' +
-        '<div class="project-item-name' + (isActive ? ' is-active' : '') + '">' +
-          (isActive ? '▶ ' : '') + escHtml(proj.name) +
-        '</div>' +
-        '<div class="project-item-meta">開始: ' + proj.createdAt + '　最終: ' + projectLastDate(proj) + '</div>' +
-      '</div>' +
-      '<div class="project-item-stats">' + chars.toLocaleString() + ' 文字<br>' + sessions + ' session' + (sessions !== 1 ? 's' : '') + '</div>' +
-      '<div class="project-item-actions">' +
-        (!isActive ? '<button class="proj-btn proj-btn-switch" onclick="switchProject(\'' + pid + '\')">切替</button>' : '') +
-        '<button class="proj-btn" onclick="renameProject(\'' + pid + '\')">名前変更</button>' +
-        (!isActive ? '<button class="proj-btn" style="border-color:#6b2020;color:var(--accent);" onclick="deleteProject(\'' + pid + '\')">削除</button>' : '') +
-      '</div>';
+  if(!ids.length){ container.innerHTML='<div style="color:var(--text-sub);padding:20px;font-size:0.85rem;">プロジェクトがありません</div>'; return; }
+  container.innerHTML='';
+  ids.forEach(function(pid){
+    var proj=data.projects[pid], isActive=pid===data.activeProjectId;
+    var catTotals=projectCategoryTotals(proj);
+    var catKeys=Object.keys(catTotals);
+    var tagsHtml='';
+    if(!catKeys.length) {
+      tagsHtml='<span style="font-size:0.72rem;color:var(--text-sub);">記録なし</span>';
+    } else {
+      catKeys.forEach(function(cat){
+        var ct=catTotals[cat];
+        var detail=ct.chars>0
+          ? escHtml(cat)+': <span>'+ct.sessions+'セッション / '+ct.chars.toLocaleString()+'文字</span>'
+          : escHtml(cat)+': <span>'+ct.sessions+'セッション</span>';
+        tagsHtml+='<div class="act-tag">'+detail+'</div>';
+      });
+    }
+    var item=document.createElement('div');
+    item.className='project-item'+(isActive?' active-project':'');
+    item.innerHTML=
+      '<div class="project-item-top">'+
+        '<div class="project-item-left">'+
+          '<div class="project-item-name'+(isActive?' is-active':'')+'">'+
+            (isActive?'▶ ':'')+escHtml(proj.name)+
+          '</div>'+
+          '<div class="project-item-meta">開始: '+proj.createdAt+'　最終: '+projectLastDate(proj)+'</div>'+
+        '</div>'+
+        '<div class="project-item-actions">'+
+          (!isActive?'<button class="proj-btn proj-btn-switch" onclick="switchProject(\''+pid+'\')">切替</button>':'')+
+          '<button class="proj-btn" onclick="renameProject(\''+pid+'\')">名前変更</button>'+
+          (!isActive?'<button class="proj-btn" style="border-color:#6b2020;color:var(--accent);" onclick="deleteProject(\''+pid+'\')">削除</button>':'')+
+        '</div>'+
+      '</div>'+
+      '<div class="activity-breakdown">'+tagsHtml+'</div>';
     container.appendChild(item);
   });
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function createNewProject() {
-  showModal('新しいプロジェクト', 'プロジェクト名を入力してください', '', 'text', true,
-    function(val) {
-      var name = val.trim() || ('Project ' + (Object.keys(data.projects).length + 1));
-      var id = genId();
-      data.projects[id] = { id: id, name: name, createdAt: todayKey(), days: {} };
-      data.activeProjectId = id;
-      save();
-      resetTimer();
-      renderProjectsList();
-      switchView('timer');
-    }, null);
+  showModal('新しいプロジェクト','プロジェクト名を入力してください','',true,
+    function(val){
+      var name=val.trim()||('Project '+(Object.keys(data.projects).length+1));
+      var id=genId();
+      data.projects[id]={id:id,name:name,createdAt:todayKey(),days:{}};
+      data.activeProjectId=id;
+      save(); resetTimer(); switchView('timer');
+    },null);
 }
 
 function switchProject(pid) {
-  if (!data.projects[pid]) return;
-  data.activeProjectId = pid;
-  save();
-  resetTimer();
-  renderProjectsList();
-  updateUI();
-  switchView('timer');
+  if(!data.projects[pid]) return;
+  data.activeProjectId=pid; save(); resetTimer(); updateUI(); switchView('timer');
 }
 
 function renameProject(pid) {
-  var proj = data.projects[pid];
-  if (!proj) return;
-  showModal('プロジェクト名を変更', '新しい名前を入力してください', proj.name, 'text', true,
-    function(val) {
-      var name = val.trim();
-      if (!name) return;
-      proj.name = name;
-      save();
-      updateUI();
-      renderProjectsList();
-    }, null);
+  var proj=data.projects[pid]; if(!proj) return;
+  showModal('プロジェクト名を変更','新しい名前を入力してください',proj.name,true,
+    function(val){ var name=val.trim(); if(!name) return; proj.name=name; save(); updateUI(); renderProjectsList(); },null);
 }
 
 function deleteProject(pid) {
-  if (pid === data.activeProjectId) { alert('現在使用中のプロジェクトは削除できません。'); return; }
-  var proj = data.projects[pid];
-  if (!proj) return;
-  if (!confirm('「' + proj.name + '」を削除しますか？この操作は取り消せません。')) return;
-  delete data.projects[pid];
-  save();
-  renderProjectsList();
-  updateUI();
+  if(pid===data.activeProjectId){ alert('現在使用中のプロジェクトは削除できません。'); return; }
+  var proj=data.projects[pid]; if(!proj) return;
+  if(!confirm('「'+proj.name+'」を削除しますか？この操作は取り消せません。')) return;
+  delete data.projects[pid]; save(); renderProjectsList(); updateUI();
 }
 
-// ── ナビゲーション ──────────────────────────────────────
+// ── Category management ─────────────────────────────────
+function renderCategoryList() {
+  var container=document.getElementById('cat-list');
+  container.innerHTML='';
+  data.categories.forEach(function(cat,i){
+    var row=document.createElement('div');
+    row.className='cat-row';
+    row.innerHTML=
+      '<span class="cat-name">'+escHtml(cat)+
+        (cat===WRITING_CATEGORY?' <span style="font-size:0.68rem;color:var(--text-sub);">（文字数あり）</span>':'')+
+      '</span>'+
+      '<button class="cat-del" onclick="deleteCategory('+i+')">削除</button>';
+    container.appendChild(row);
+  });
+}
+
+function addCategory() {
+  var input=document.getElementById('cat-add-input');
+  var name=input.value.trim();
+  if(!name) return;
+  if(data.categories.indexOf(name)!==-1){ alert('同じ名前のカテゴリがすでにあります。'); return; }
+  data.categories.push(name); save(); input.value='';
+  renderCategoryList(); renderActivityChips();
+}
+
+function deleteCategory(i) {
+  var cat=data.categories[i];
+  if(cat===WRITING_CATEGORY){ alert('「執筆」カテゴリは削除できません。'); return; }
+  if(!confirm('「'+cat+'」を削除しますか？（記録済みデータには影響しません）')) return;
+  data.categories.splice(i,1);
+  if(state.currentCategory===cat) state.currentCategory=data.categories[0]||WRITING_CATEGORY;
+  save(); renderCategoryList(); renderActivityChips();
+}
+
+// ── Nav ─────────────────────────────────────────────────
 function switchView(name) {
-  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
-  document.querySelectorAll('nav button').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('view-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'settings') {
-    document.getElementById('set-focus').value = data.settings.focus;
-    document.getElementById('set-break').value = data.settings.break;
-  }
-  if (name === 'projects') renderProjectsList();
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='settings'){ document.getElementById('set-focus').value=data.settings.focus; document.getElementById('set-break').value=data.settings.break; renderCategoryList(); }
+  if(name==='projects') renderProjectsList();
 }
 
 function saveSettings() {
-  var f = parseInt(document.getElementById('set-focus').value) || 20;
-  var b = parseInt(document.getElementById('set-break').value) || 5;
-  data.settings.focus = f;
-  data.settings.break = b;
-  save();
-  if (!state.running) resetTimer();
+  var f=parseInt(document.getElementById('set-focus').value)||20;
+  var b=parseInt(document.getElementById('set-break').value)||5;
+  data.settings.focus=f; data.settings.break=b; save();
+  if(!state.running) resetTimer();
 }
 
 function clearAllData() {
-  if (!confirm('すべてのプロジェクトとデータを削除します。よろしいですか？')) return;
-  localStorage.removeItem(STORE_KEY);
-  data = defaultData();
-  save();
-  resetTimer();
-  updateUI();
+  if(!confirm('すべてのプロジェクトとデータを削除します。よろしいですか？')) return;
+  localStorage.removeItem(STORE_KEY); data=defaultData(); save(); resetTimer(); updateUI();
 }
 
-// ── 初期化 ──────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────
+renderActivityChips();
 updateUI();
 </script>
 </body>
