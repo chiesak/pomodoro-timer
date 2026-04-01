@@ -119,6 +119,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
     <div class="stats-grid">
       <div class="stat-card"><span class="stat-val" id="today-sessions">0</span><span class="stat-lbl">Sessions Today</span></div>
       <div class="stat-card"><span class="stat-val" id="today-chars">0</span><span class="stat-lbl">Today's Chars</span></div>
+      <div class="stat-card" style="grid-column:1/-1;"><span class="stat-val" id="project-total-sessions">0</span><span class="stat-lbl">Project Total Sessions</span></div>
     </div>
   </div>
 
@@ -178,7 +179,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 
 <script>
 var STORE_KEY = 'pomowriters_v13';
-var DEFAULT_CATEGORIES = ['執筆', '読書', '分析', 'その他'];
+var DEFAULT_CATEGORIES = ['執筆', '読書', '調査', 'その他'];
 var WRITING_CATEGORY = '執筆';
 
 function defaultData() {
@@ -257,6 +258,10 @@ function updateUI() {
   document.getElementById('today-sessions').textContent = day.sessions||0;
   document.getElementById('today-chars').textContent = (day.chars||0).toLocaleString();
   document.getElementById('total-chars').textContent = (proj ? projectTotalChars(proj) : 0).toLocaleString();
+  // プロジェクト合計セッション数
+  var totalSessions = 0;
+  if (proj) { for(var dk in proj.days) totalSessions += (proj.days[dk].sessions||0); }
+  document.getElementById('project-total-sessions').textContent = totalSessions;
 }
 
 // ── Modal ───────────────────────────────────────────────
@@ -434,6 +439,11 @@ function renderProjectsList() {
     }
     var item=document.createElement('div');
     item.className='project-item'+(isActive?' active-project':'');
+    var totalSessions=catKeys.reduce(function(s,cat){return s+(catTotals[cat].sessions||0);},0);
+    var totalChars=projectTotalChars(proj);
+    var summaryHtml=totalSessions>0
+      ? '<span style="font-family:\'JetBrains Mono\',monospace;font-size:0.8rem;color:var(--accent);">計 '+totalSessions+' セッション'+(totalChars>0?' / '+totalChars.toLocaleString()+'文字':'')+'</span>'
+      : '';
     item.innerHTML=
       '<div class="project-item-top">'+
         '<div class="project-item-left">'+
@@ -442,10 +452,13 @@ function renderProjectsList() {
           '</div>'+
           '<div class="project-item-meta">開始: '+proj.createdAt+'　最終: '+projectLastDate(proj)+'</div>'+
         '</div>'+
-        '<div class="project-item-actions">'+
-          (!isActive?'<button class="proj-btn proj-btn-switch" onclick="switchProject(\''+pid+'\')">切替</button>':'')+
-          '<button class="proj-btn" onclick="renameProject(\''+pid+'\')">名前変更</button>'+
-          (!isActive?'<button class="proj-btn" style="border-color:#6b2020;color:var(--accent);" onclick="deleteProject(\''+pid+'\')">削除</button>':'')+
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">'+
+          summaryHtml+
+          '<div class="project-item-actions">'+
+            (!isActive?'<button class="proj-btn proj-btn-switch" onclick="switchProject(\''+pid+'\')">切替</button>':'')+
+            '<button class="proj-btn" onclick="renameProject(\''+pid+'\')">名前変更</button>'+
+            (!isActive?'<button class="proj-btn" style="border-color:#6b2020;color:var(--accent);" onclick="deleteProject(\''+pid+'\')">削除</button>':'')+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<div class="activity-breakdown">'+tagsHtml+'</div>';
