@@ -75,6 +75,14 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 .flash-red { animation: flash 0.5s infinite; }
 @keyframes flash { 0%{background:var(--surface);}50%{background:#4a1515;}100%{background:var(--surface);} }
 
+/* Sync */
+.sync-bar { max-width:500px; margin:0 auto 16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.sync-status { font-size:0.75rem; color:var(--text-sub); }
+.sync-status.ok { color:#52b788; }
+.sync-status.err { color:#e05a5a; }
+.sync-btn { background:var(--accent); color:white; border:none; border-radius:8px; padding:7px 14px; font-size:0.75rem; cursor:pointer; white-space:nowrap; }
+.sync-btn.secondary { background:transparent; border:1px solid var(--border); color:var(--text-sub); }
+
 /* Modal */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; align-items:center; justify-content:center; pointer-events:none; }
 .modal-overlay.active { display:flex; pointer-events:auto; }
@@ -134,6 +142,18 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 
   <!-- Settings -->
   <div id="view-settings" class="view">
+
+    <!-- Google Drive同期 -->
+    <div class="sync-bar" id="sync-bar">
+      <div>
+        <div style="font-size:0.78rem;font-weight:600;margin-bottom:2px;">Google Drive 同期</div>
+        <div class="sync-status" id="sync-status">未ログイン</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="sync-btn secondary" id="sync-logout-btn" onclick="gSignOut()" style="display:none;">ログアウト</button>
+        <button class="sync-btn" id="sync-action-btn" onclick="gSignIn()">ログイン</button>
+      </div>
+    </div>
     <div class="settings-panel">
       <div class="settings-row">
         <span>Focus (min)</span>
@@ -177,6 +197,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   </div>
 </div>
 
+<script src="https://accounts.google.com/gsi/client" async></script>
 <script>
 var STORE_KEY = 'pomowriters_v13';
 var DEFAULT_CATEGORIES = ['執筆', '読書', '調査', 'その他'];
@@ -556,6 +577,139 @@ function clearAllData() {
 // ── Init ─────────────────────────────────────────────────
 renderActivityChips();
 updateUI();
+
+// ── Google Drive 同期 ────────────────────────────────────
+var CLIENT_ID = '356000893504-uq4o8blrpql70ejkhun0dnrdphinp908.apps.googleusercontent.com';
+var SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+var GIST_FILENAME = 'pomowriters_data.json';
+var gToken = null;
+var gFileId = null;
+var syncInProgress = false;
+
+function setSyncStatus(msg, cls) {
+  var el = document.getElementById('sync-status');
+  el.textContent = msg;
+  el.className = 'sync-status' + (cls ? ' ' + cls : '');
+}
+
+function gSignIn() {
+  google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: function(resp) {
+      if (resp.error) { setSyncStatus('ログイン失敗', 'err'); return; }
+      gToken = resp.access_token;
+      document.getElementById('sync-action-btn').textContent = '今すぐ同期';
+      document.getElementById('sync-action-btn').onclick = syncNow;
+      document.getElementById('sync-logout-btn').style.display = '';
+      setSyncStatus('ログイン済み', 'ok');
+      syncNow();
+    }
+  }).requestAccessToken();
+}
+
+function gSignOut() {
+  google.accounts.oauth2.revoke(gToken, function(){});
+  gToken = null; gFileId = null;
+  document.getElementById('sync-action-btn').textContent = 'ログイン';
+  document.getElementById('sync-action-btn').onclick = gSignIn;
+  document.getElementById('sync-logout-btn').style.display = 'none';
+  setSyncStatus('未ログイン');
+}
+
+async function syncNow() {
+  if (!gToken || syncInProgress) return;
+  syncInProgress = true;
+  setSyncStatus('同期中…');
+  try {
+    // ファイルを検索
+    if (!gFileId) {
+      var searchRes = await fetch(
+        'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27' + GIST_FILENAME + '%27&fields=files(id,modifiedTime)',
+        { headers: { Authorization: 'Bearer ' + gToken } }
+      );
+      var searchData = await searchRes.json();
+      if (searchData.files && searchData.files.length > 0) {
+        gFileId = searchData.files[0].id;
+      }
+    }
+
+    if (gFileId) {
+      // リモートデータを取得してマージ
+      var dlRes = await fetch(
+        'https://www.googleapis.com/drive/v3/files/' + gFileId + '?alt=media',
+        { headers: { Authorization: 'Bearer ' + gToken } }
+      );
+      var remoteData = await dlRes.json();
+      mergeData(remoteData);
+    }
+
+    // ローカルデータをアップロード
+    await uploadData();
+    setSyncStatus('同期完了 ' + new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}), 'ok');
+  } catch(e) {
+    setSyncStatus('同期失敗: ' + e.message, 'err');
+  }
+  syncInProgress = false;
+}
+
+function mergeData(remote) {
+  // プロジェクトをマージ（両方の記録を保持、日付ごとに多い方を優先）
+  if (!remote || !remote.projects) return;
+  for (var pid in remote.projects) {
+    if (!data.projects[pid]) {
+      data.projects[pid] = remote.projects[pid];
+    } else {
+      var lp = data.projects[pid], rp = remote.projects[pid];
+      for (var dk in rp.days) {
+        if (!lp.days[dk]) {
+          lp.days[dk] = rp.days[dk];
+        } else {
+          // セッション数が多い方を優先
+          if ((rp.days[dk].sessions||0) > (lp.days[dk].sessions||0)) {
+            lp.days[dk] = rp.days[dk];
+          }
+        }
+      }
+    }
+  }
+  // カテゴリもマージ
+  if (remote.categories) {
+    remote.categories.forEach(function(cat) {
+      if (data.categories.indexOf(cat) === -1) data.categories.push(cat);
+    });
+  }
+  save();
+  updateUI();
+  renderActivityChips();
+}
+
+async function uploadData() {
+  var body = JSON.stringify(data);
+  var metadata = { name: GIST_FILENAME, parents: ['appDataFolder'] };
+
+  if (gFileId) {
+    // 更新
+    await fetch('https://www.googleapis.com/upload/drive/v3/files/' + gFileId + '?uploadType=multipart', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'multipart/related; boundary=boundary' },
+      body: '--boundary\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify({name: GIST_FILENAME}) + '\r\n--boundary\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--boundary--'
+    });
+  } else {
+    // 新規作成
+    var res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'multipart/related; boundary=boundary' },
+      body: '--boundary\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + '\r\n--boundary\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--boundary--'
+    });
+    var resData = await res.json();
+    gFileId = resData.id;
+  }
+}
+
+// セッション記録後に自動同期
+var _origSave = save;
+save = function() { _origSave(); if (gToken) syncNow(); };
 </script>
 </body>
 </html>
