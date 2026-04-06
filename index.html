@@ -68,9 +68,21 @@ h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
 .cat-add-input:focus { border-color:var(--accent); }
 .cat-add-btn { background:var(--accent); color:white; border:none; border-radius:6px; padding:7px 16px; cursor:pointer; font-size:0.82rem; }
 
+/* Review */
+.review-range-btns { display:flex; gap:8px; max-width:500px; margin:0 auto 16px; }
+.review-range-btn { flex:1; padding:9px; background:transparent; border:1px solid var(--border); color:var(--text-sub); border-radius:8px; cursor:pointer; font-size:0.8rem; }
+.review-range-btn.active { background:var(--accent); border-color:var(--accent); color:white; font-weight:600; }
+.review-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; max-width:500px; margin:0 auto 14px; }
+.review-card-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-sub); margin-bottom:14px; }
+.review-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:4px; }
+.review-summary-item { text-align:center; }
+.review-summary-val { font-family:'JetBrains Mono',monospace; font-size:1.3rem; color:var(--accent); display:block; }
+.review-summary-lbl { font-size:0.65rem; color:var(--text-sub); margin-top:3px; }
+.chart-wrap { position:relative; }
+
 /* Nav */
 nav { position: fixed; bottom: 0; width: 100%; height: 72px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 20px; }
-nav button { background: none; border: none; color: var(--text-sub); font-size: 0.78rem; text-transform: uppercase; cursor: pointer; width: 100px; }
+nav button { background: none; border: none; color: var(--text-sub); font-size: 0.72rem; text-transform: uppercase; cursor: pointer; width: 80px; }
 nav button.active { color: var(--accent); font-weight: 600; border-top: 2px solid var(--accent); }
 .flash-red { animation: flash 0.5s infinite; }
 @keyframes flash { 0%{background:var(--surface);}50%{background:#4a1515;}100%{background:var(--surface);} }
@@ -177,11 +189,50 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
     </div>
   </div>
 
+  <!-- Review -->
+  <div id="view-review" class="view">
+
+    <!-- 月選択 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;max-width:500px;margin:0 auto 16px;">
+      <button class="review-range-btn" id="rv-prev-month" style="flex:0 0 auto;width:40px;">‹</button>
+      <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.95rem;" id="rv-month-label">—</div>
+      <button class="review-range-btn" id="rv-next-month" style="flex:0 0 auto;width:40px;">›</button>
+    </div>
+
+    <!-- サマリー -->
+    <div class="review-card">
+      <div class="review-card-title">サマリー</div>
+      <div class="review-summary-grid">
+        <div class="review-summary-item"><span class="review-summary-val" id="rv-total">0</span><span class="review-summary-lbl">総セッション</span></div>
+        <div class="review-summary-item"><span class="review-summary-val" id="rv-writing">0</span><span class="review-summary-lbl">執筆セッション</span></div>
+        <div class="review-summary-item"><span class="review-summary-val" id="rv-chars">0</span><span class="review-summary-lbl">執筆文字数</span></div>
+      </div>
+    </div>
+
+    <!-- 円グラフ：プロジェクト別割合 -->
+    <div class="review-card">
+      <div class="review-card-title">プロジェクト別セッション割合</div>
+      <div class="chart-wrap" style="max-width:280px;margin:0 auto;"><canvas id="pieChart" height="240"></canvas></div>
+    </div>
+
+    <!-- 円グラフ：カテゴリ別割合 -->
+    <div class="review-card">
+      <div class="review-card-title">カテゴリ別セッション割合</div>
+      <div class="chart-wrap" style="max-width:280px;margin:0 auto;"><canvas id="catPieChart" height="240"></canvas></div>
+    </div>
+
+    <!-- CSVダウンロード -->
+    <div style="max-width:500px;margin:0 auto 30px;text-align:center;">
+      <button onclick="downloadCSV()" style="background:var(--accent);color:white;border:none;border-radius:10px;padding:12px 30px;cursor:pointer;font-size:0.85rem;width:100%;">📥 全データをCSVでダウンロード</button>
+    </div>
+  </div>
+
 </div>
 
 <nav>
   <button id="nav-timer" class="active" onclick="switchView('timer')">Timer</button>
   <button id="nav-projects" onclick="switchView('projects')">Projects</button>
+  <button id="nav-review" onclick="switchView('review')">振り返り</button>
   <button id="nav-settings" onclick="switchView('settings')">Settings</button>
 </nav>
 
@@ -198,6 +249,7 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 var STORE_KEY = 'pomowriters_v13';
 var DEFAULT_CATEGORIES = ['執筆', '読書', '調査', 'その他'];
@@ -566,6 +618,11 @@ function deleteCategory(i) {
 }
 
 // ── Nav ─────────────────────────────────────────────────
+var reviewYear  = new Date().getFullYear();
+var reviewMonth = new Date().getMonth(); // 0-11
+var pieChartInstance = null;
+var catPieChartInstance = null;
+
 function switchView(name) {
   document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
   document.querySelectorAll('nav button').forEach(function(b){ b.classList.remove('active'); });
@@ -573,6 +630,175 @@ function switchView(name) {
   document.getElementById('nav-'+name).classList.add('active');
   if(name==='settings'){ document.getElementById('set-focus').value=data.settings.focus; document.getElementById('set-break').value=data.settings.break; renderCategoryList(); }
   if(name==='projects') renderProjectsList();
+  if(name==='review') renderReview();
+}
+
+// 月ナビ
+document.getElementById('rv-prev-month').addEventListener('click', function(){
+  reviewMonth--;
+  if(reviewMonth < 0){ reviewMonth = 11; reviewYear--; }
+  renderReview();
+});
+document.getElementById('rv-next-month').addEventListener('click', function(){
+  var now = new Date();
+  if(reviewYear === now.getFullYear() && reviewMonth >= now.getMonth()) return;
+  reviewMonth++;
+  if(reviewMonth > 11){ reviewMonth = 0; reviewYear++; }
+  renderReview();
+});
+
+function renderReview() {
+  var now = new Date();
+  var label = reviewYear + '年' + (reviewMonth+1) + '月';
+  document.getElementById('rv-month-label').textContent = label;
+  // 翌月ボタンの無効化
+  document.getElementById('rv-next-month').style.opacity =
+    (reviewYear === now.getFullYear() && reviewMonth >= now.getMonth()) ? '0.3' : '1';
+
+  // 対象月の日付キープレフィックス
+  var prefix = reviewYear + '-' + String(reviewMonth+1).padStart(2,'0');
+
+  // プロジェクト別・カテゴリ別集計
+  var projTotals = {};   // { pid: { name, sessions, byCategory } }
+  var catTotals  = {};   // { cat: sessions }
+  var totalSessions = 0, writingSessions = 0, writingChars = 0;
+
+  for (var pid in data.projects) {
+    var proj = data.projects[pid];
+    var ps = 0, pbc = {};
+    for (var dk in proj.days) {
+      if (dk.indexOf(prefix) !== 0) continue;
+      var day = proj.days[dk];
+      ps += day.sessions || 0;
+      var bc = day.byCategory || {};
+      for (var cat in bc) {
+        if (!pbc[cat]) pbc[cat] = { sessions: 0, chars: 0 };
+        pbc[cat].sessions += bc[cat].sessions || 0;
+        pbc[cat].chars    += bc[cat].chars    || 0;
+        if (!catTotals[cat]) catTotals[cat] = 0;
+        catTotals[cat] += bc[cat].sessions || 0;
+        if (cat === WRITING_CATEGORY) {
+          writingSessions += bc[cat].sessions || 0;
+          writingChars    += bc[cat].chars    || 0;
+        }
+      }
+    }
+    if (ps > 0) projTotals[pid] = { name: proj.name, sessions: ps, byCategory: pbc };
+    totalSessions += ps;
+  }
+
+  // サマリー
+  document.getElementById('rv-total').textContent   = totalSessions;
+  document.getElementById('rv-writing').textContent  = writingSessions;
+  document.getElementById('rv-chars').textContent    = writingChars.toLocaleString();
+
+  var palette = ['#e05a5a','#52b788','#f2cc8f','#74b3ce','#e07a5f','#9b5de5','#00bbf9','#f15bb5'];
+
+  // ── プロジェクト別円グラフ ──
+  var projKeys  = Object.keys(projTotals);
+  var projLabels = projKeys.map(function(pid){ return projTotals[pid].name; });
+  var projVals   = projKeys.map(function(pid){ return projTotals[pid].sessions; });
+
+  var pieCtx = document.getElementById('pieChart').getContext('2d');
+  if (pieChartInstance) pieChartInstance.destroy();
+  if (projVals.length === 0) {
+    pieCtx.clearRect(0,0,999,999);
+    pieCtx.fillStyle='#8b949e'; pieCtx.font='13px sans-serif'; pieCtx.textAlign='center';
+    pieCtx.fillText('この月の記録がありません', 140, 120);
+  } else {
+    pieChartInstance = new Chart(pieCtx, {
+      type: 'doughnut',
+      data: { labels: projLabels, datasets: [{ data: projVals,
+        backgroundColor: projLabels.map(function(_,i){ return palette[i%palette.length]; }),
+        borderWidth: 2, borderColor: '#161b22' }] },
+      options: { responsive: true, plugins: {
+        legend: { position:'bottom', labels:{ color:'#8b949e', font:{size:11}, boxWidth:12, padding:10 } },
+        tooltip: { callbacks: { label: function(ctx){
+          var total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+          return ctx.label+': '+ctx.parsed+'セッション ('+Math.round(ctx.parsed/total*100)+'%)';
+        }}}
+      }}
+    });
+  }
+
+  // ── カテゴリ別円グラフ ──
+  var catKeys   = Object.keys(catTotals).filter(function(c){ return catTotals[c]>0; });
+  var catVals   = catKeys.map(function(c){ return catTotals[c]; });
+
+  var catCtx = document.getElementById('catPieChart').getContext('2d');
+  if (catPieChartInstance) catPieChartInstance.destroy();
+  if (catVals.length === 0) {
+    catCtx.clearRect(0,0,999,999);
+    catCtx.fillStyle='#8b949e'; catCtx.font='13px sans-serif'; catCtx.textAlign='center';
+    catCtx.fillText('この月の記録がありません', 140, 120);
+  } else {
+    catPieChartInstance = new Chart(catCtx, {
+      type: 'doughnut',
+      data: { labels: catKeys, datasets: [{ data: catVals,
+        backgroundColor: catKeys.map(function(_,i){ return palette[i%palette.length]; }),
+        borderWidth: 2, borderColor: '#161b22' }] },
+      options: { responsive: true, plugins: {
+        legend: { position:'bottom', labels:{ color:'#8b949e', font:{size:11}, boxWidth:12, padding:10 } },
+        tooltip: { callbacks: { label: function(ctx){
+          var total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+          return ctx.label+': '+ctx.parsed+'セッション ('+Math.round(ctx.parsed/total*100)+'%)';
+        }}}
+      }}
+    });
+  }
+}
+
+// ── CSVダウンロード ─────────────────────────────────────
+function downloadCSV() {
+  // 全カテゴリを収集
+  var allCats = data.categories.slice();
+  // データに存在するが categories に無いものも追加
+  for (var pid in data.projects) {
+    for (var dk in data.projects[pid].days) {
+      var bc = data.projects[pid].days[dk].byCategory || {};
+      for (var cat in bc) { if (allCats.indexOf(cat)===-1) allCats.push(cat); }
+    }
+  }
+
+  // ヘッダー行（BOMつきでExcelが文字化けしない）
+  var BOM = '\uFEFF';
+  var header = ['日付','プロジェクト'].concat(allCats.map(function(c){ return c+'(セッション)'; }));
+  header.push('執筆文字数');
+  var rows = [header];
+
+  // 全日付を収集してソート
+  var dateSet = {};
+  for (var pid in data.projects) {
+    for (var dk in data.projects[pid].days) dateSet[dk] = true;
+  }
+  var dates = Object.keys(dateSet).sort();
+
+  dates.forEach(function(dk) {
+    for (var pid in data.projects) {
+      var proj = data.projects[pid];
+      if (!proj.days[dk]) continue;
+      var day = proj.days[dk];
+      var bc = day.byCategory || {};
+      var row = [dk, proj.name];
+      allCats.forEach(function(cat) {
+        row.push(bc[cat] ? (bc[cat].sessions || 0) : 0);
+      });
+      row.push(bc[WRITING_CATEGORY] ? (bc[WRITING_CATEGORY].chars || 0) : 0);
+      rows.push(row);
+    }
+  });
+
+  var csv = BOM + rows.map(function(r){
+    return r.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\r\n');
+
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'pomodoro_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function saveSettings() {
