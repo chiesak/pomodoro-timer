@@ -820,7 +820,7 @@ updateUI();
 // ── Google Drive 同期 ────────────────────────────────────
 var CLIENT_ID = '356000893504-uq4o8blrpql70ejkhun0dnrdphinp908.apps.googleusercontent.com';
 var SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
-var GIST_FILENAME = 'pomowriters_data.json';
+var DRIVE_FILENAME = 'pomowriters_data.json';
 var gToken = null;
 var gFileId = null;
 var syncInProgress = false;
@@ -861,10 +861,10 @@ async function syncNow() {
   syncInProgress = true;
   setSyncStatus('同期中…');
   try {
-    // ファイルを検索
+    // ファイルIDを検索
     if (!gFileId) {
       var searchRes = await fetch(
-        'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27' + GIST_FILENAME + '%27&fields=files(id,modifiedTime)',
+        'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27' + DRIVE_FILENAME + '%27&fields=files(id)',
         { headers: { Authorization: 'Bearer ' + gToken } }
       );
       var searchData = await searchRes.json();
@@ -874,16 +874,20 @@ async function syncNow() {
     }
 
     if (gFileId) {
-      // リモートデータを取得してマージ
+      // リモートデータを取得
       var dlRes = await fetch(
         'https://www.googleapis.com/drive/v3/files/' + gFileId + '?alt=media',
         { headers: { Authorization: 'Bearer ' + gToken } }
       );
       var remoteData = await dlRes.json();
-      mergeData(remoteData);
+      // マージしてローカルに反映
+      data = mergeData(data, remoteData);
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+      updateUI();
+      renderActivityChips();
     }
 
-    // ローカルデータをアップロード
+    // マージ済みデータをアップロード
     await uploadData();
     setSyncStatus('同期完了 ' + new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}), 'ok');
   } catch(e) {
@@ -892,63 +896,78 @@ async function syncNow() {
   syncInProgress = false;
 }
 
-function mergeData(remote) {
-  // プロジェクトをマージ（両方の記録を保持、日付ごとに多い方を優先）
-  if (!remote || !remote.projects) return;
-  for (var pid in remote.projects) {
-    if (!data.projects[pid]) {
-      data.projects[pid] = remote.projects[pid];
-    } else {
-      var lp = data.projects[pid], rp = remote.projects[pid];
-      for (var dk in rp.days) {
-        if (!lp.days[dk]) {
-          lp.days[dk] = rp.days[dk];
-        } else {
-          // セッション数が多い方を優先
-          if ((rp.days[dk].sessions||0) > (lp.days[dk].sessions||0)) {
+function mergeData(local, remote) {
+  if (!remote) return local;
+  var merged = JSON.parse(JSON.stringify(local)); // ディープコピー
+
+  // settings: 両方の値を比較して新しい方を使う（remoteを優先）
+  if (remote.settings) {
+    merged.settings = remote.settings;
+  }
+
+  // categories: 両方をマージ（順序はlocalを優先、remoteにしかないものを末尾に追加）
+  if (remote.categories) {
+    remote.categories.forEach(function(cat) {
+      if (merged.categories.indexOf(cat) === -1) merged.categories.push(cat);
+    });
+  }
+
+  // activeProjectId: remoteにあれば採用（新しいデバイスでは空のため）
+  if (remote.activeProjectId && !merged.projects[remote.activeProjectId] && remote.projects && remote.projects[remote.activeProjectId]) {
+    merged.activeProjectId = remote.activeProjectId;
+  }
+
+  // projects: 全プロジェクトをマージ
+  if (remote.projects) {
+    for (var pid in remote.projects) {
+      if (!merged.projects[pid]) {
+        // remoteにしかないプロジェクトはそのまま追加
+        merged.projects[pid] = remote.projects[pid];
+      } else {
+        var lp = merged.projects[pid];
+        var rp = remote.projects[pid];
+        // プロジェクト名: remoteを優先（最後に編集した方）
+        if (rp.name) lp.name = rp.name;
+        // 日別データをマージ
+        for (var dk in rp.days) {
+          if (!lp.days[dk]) {
             lp.days[dk] = rp.days[dk];
+          } else {
+            // セッション数が多い方を採用
+            if ((rp.days[dk].sessions || 0) > (lp.days[dk].sessions || 0)) {
+              lp.days[dk] = rp.days[dk];
+            }
           }
         }
       }
     }
   }
-  // カテゴリもマージ
-  if (remote.categories) {
-    remote.categories.forEach(function(cat) {
-      if (data.categories.indexOf(cat) === -1) data.categories.push(cat);
-    });
-  }
-  save();
-  updateUI();
-  renderActivityChips();
+
+  return merged;
 }
 
 async function uploadData() {
   var body = JSON.stringify(data);
-  var metadata = { name: GIST_FILENAME, parents: ['appDataFolder'] };
-
   if (gFileId) {
-    // 更新
     await fetch('https://www.googleapis.com/upload/drive/v3/files/' + gFileId + '?uploadType=multipart', {
       method: 'PATCH',
-      headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'multipart/related; boundary=boundary' },
-      body: '--boundary\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify({name: GIST_FILENAME}) + '\r\n--boundary\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--boundary--'
+      headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'multipart/related; boundary=pomo_boundary' },
+      body: '--pomo_boundary\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify({name: DRIVE_FILENAME}) + '\r\n--pomo_boundary\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--pomo_boundary--'
     });
   } else {
-    // 新規作成
     var res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'multipart/related; boundary=boundary' },
-      body: '--boundary\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify(metadata) + '\r\n--boundary\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--boundary--'
+      headers: { Authorization: 'Bearer ' + gToken, 'Content-Type': 'multipart/related; boundary=pomo_boundary' },
+      body: '--pomo_boundary\r\nContent-Type: application/json\r\n\r\n' + JSON.stringify({name: DRIVE_FILENAME, parents: ['appDataFolder']}) + '\r\n--pomo_boundary\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--pomo_boundary--'
     });
     var resData = await res.json();
     gFileId = resData.id;
   }
 }
 
-// セッション記録後に自動同期
+// セッション記録後・設定変更後に自動同期
 var _origSave = save;
-save = function() { _origSave(); if (gToken) syncNow(); };
+save = function() { _origSave(); if (gToken && !syncInProgress) syncNow(); };
 </script>
 </body>
 </html>
