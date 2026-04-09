@@ -880,14 +880,26 @@ async function syncNow() {
         { headers: { Authorization: 'Bearer ' + gToken } }
       );
       var remoteData = await dlRes.json();
-      // マージしてローカルに反映
-      data = mergeData(data, remoteData);
+
+      // タイムスタンプで新しい方を基準にマージ
+      var localTs  = data.updatedAt || 0;
+      var remoteTs = remoteData.updatedAt || 0;
+
+      if (remoteTs > localTs) {
+        // リモートが新しい → リモートを基準にローカルの追加分だけ補完
+        data = mergeData(remoteData, data);
+      } else {
+        // ローカルが新しい → ローカルを基準にリモートの追加分だけ補完
+        data = mergeData(data, remoteData);
+      }
       localStorage.setItem(STORE_KEY, JSON.stringify(data));
       updateUI();
       renderActivityChips();
     }
 
-    // マージ済みデータをアップロード
+    // タイムスタンプを更新してアップロード
+    data.updatedAt = Date.now();
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
     await uploadData();
     setSyncStatus('同期完了 ' + new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}), 'ok');
   } catch(e) {
@@ -896,46 +908,34 @@ async function syncNow() {
   syncInProgress = false;
 }
 
-function mergeData(local, remote) {
-  if (!remote) return local;
-  var merged = JSON.parse(JSON.stringify(local)); // ディープコピー
+// base: 新しい方（優先）、sub: 古い方（追加分のみ補完）
+function mergeData(base, sub) {
+  if (!sub) return base;
+  var merged = JSON.parse(JSON.stringify(base));
 
-  // settings: 両方の値を比較して新しい方を使う（remoteを優先）
-  if (remote.settings) {
-    merged.settings = remote.settings;
-  }
-
-  // categories: 両方をマージ（順序はlocalを優先、remoteにしかないものを末尾に追加）
-  if (remote.categories) {
-    remote.categories.forEach(function(cat) {
+  // categories: 両方をマージ
+  if (sub.categories) {
+    sub.categories.forEach(function(cat) {
       if (merged.categories.indexOf(cat) === -1) merged.categories.push(cat);
     });
   }
 
-  // activeProjectId: remoteにあれば採用（新しいデバイスでは空のため）
-  if (remote.activeProjectId && !merged.projects[remote.activeProjectId] && remote.projects && remote.projects[remote.activeProjectId]) {
-    merged.activeProjectId = remote.activeProjectId;
-  }
-
-  // projects: 全プロジェクトをマージ
-  if (remote.projects) {
-    for (var pid in remote.projects) {
+  // projects: subにしかないプロジェクトを追加、共通プロジェクトは日別データのみ補完
+  if (sub.projects) {
+    for (var pid in sub.projects) {
       if (!merged.projects[pid]) {
-        // remoteにしかないプロジェクトはそのまま追加
-        merged.projects[pid] = remote.projects[pid];
+        merged.projects[pid] = sub.projects[pid];
       } else {
-        var lp = merged.projects[pid];
-        var rp = remote.projects[pid];
-        // プロジェクト名: remoteを優先（最後に編集した方）
-        if (rp.name) lp.name = rp.name;
-        // 日別データをマージ
-        for (var dk in rp.days) {
-          if (!lp.days[dk]) {
-            lp.days[dk] = rp.days[dk];
+        var bp = merged.projects[pid];
+        var sp = sub.projects[pid];
+        for (var dk in sp.days) {
+          if (!bp.days[dk]) {
+            // baseにない日付はsubから補完
+            bp.days[dk] = sp.days[dk];
           } else {
-            // セッション数が多い方を採用
-            if ((rp.days[dk].sessions || 0) > (lp.days[dk].sessions || 0)) {
-              lp.days[dk] = rp.days[dk];
+            // 両方にある場合はセッション数が多い方を採用
+            if ((sp.days[dk].sessions || 0) > (bp.days[dk].sessions || 0)) {
+              bp.days[dk] = sp.days[dk];
             }
           }
         }
