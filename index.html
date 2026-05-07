@@ -80,6 +80,24 @@ h1 { font-size: 1.1rem; font-weight: 300; letter-spacing: 0.1em; }
 .review-summary-lbl { font-size:0.65rem; color:var(--text-sub); margin-top:3px; }
 .chart-wrap { position:relative; }
 
+/* Edit records modal */
+.edit-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:200; align-items:flex-start; justify-content:center; overflow-y:auto; padding:20px 0 90px; }
+.edit-modal-overlay.active { display:flex; }
+.edit-modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px 20px; width:90%; max-width:480px; margin:auto; }
+.edit-modal-title { font-size:1rem; font-weight:600; margin-bottom:4px; }
+.edit-modal-sub { font-size:0.75rem; color:var(--text-sub); margin-bottom:16px; }
+.edit-day-row { display:grid; grid-template-columns:90px 1fr; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+.edit-day-row:last-child { border-bottom:none; }
+.edit-day-label { font-family:'JetBrains Mono',monospace; font-size:0.78rem; color:var(--text-sub); }
+.edit-cat-row { display:flex; gap:6px; flex-wrap:wrap; }
+.edit-cat-input-wrap { display:flex; align-items:center; gap:4px; }
+.edit-cat-label { font-size:0.7rem; color:var(--text-sub); white-space:nowrap; }
+.edit-cat-input { width:48px; background:#000; border:1px solid var(--border); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:0.9rem; text-align:center; padding:4px 6px; border-radius:6px; outline:none; }
+.edit-cat-input:focus { border-color:var(--accent); }
+.edit-modal-btns { display:flex; gap:10px; margin-top:18px; }
+.edit-modal-save { flex:1; background:var(--accent); color:white; border:none; border-radius:10px; padding:12px; cursor:pointer; font-size:0.9rem; font-family:'Inter',sans-serif; }
+.edit-modal-cancel { flex:1; background:transparent; color:var(--text-sub); border:1px solid var(--border); border-radius:10px; padding:12px; cursor:pointer; font-size:0.9rem; font-family:'Inter',sans-serif; }
+
 /* Nav */
 nav { position: fixed; bottom: 0; width: 100%; height: 72px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 20px; }
 nav button { background: none; border: none; color: var(--text-sub); font-size: 0.72rem; text-transform: uppercase; cursor: pointer; width: 80px; }
@@ -248,7 +266,18 @@ nav button.active { color: var(--accent); font-weight: 600; border-top: 2px soli
   </div>
 </div>
 
-<script src="https://accounts.google.com/gsi/client" async></script>
+<!-- 記録編集モーダル -->
+<div class="edit-modal-overlay" id="edit-modal-overlay">
+  <div class="edit-modal-box">
+    <div class="edit-modal-title" id="edit-modal-title">記録を編集</div>
+    <div class="edit-modal-sub">各日付のカテゴリ別セッション数を編集できます</div>
+    <div id="edit-day-list"></div>
+    <div class="edit-modal-btns">
+      <button class="edit-modal-cancel" onclick="closeEditModal()">キャンセル</button>
+      <button class="edit-modal-save" onclick="saveEditModal()">保存する</button>
+    </div>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 var STORE_KEY = 'pomowriters_v13';
@@ -529,6 +558,7 @@ function renderProjectsList() {
           summaryHtml+
           '<div class="project-item-actions">'+
             (!isActive?'<button class="proj-btn proj-btn-switch" data-action="switch">切替</button>':'')+
+            '<button class="proj-btn" data-action="edit">記録編集</button>'+
             '<button class="proj-btn" data-action="rename">名前変更</button>'+
             (!isActive?'<button class="proj-btn" style="border-color:#6b2020;color:var(--accent);" data-action="delete">削除</button>':'')+
           '</div>'+
@@ -542,6 +572,7 @@ function renderProjectsList() {
         e.stopPropagation();
         var action = btn.getAttribute('data-action');
         if (action === 'switch') switchProject(pid);
+        else if (action === 'edit') openEditModal(pid);
         else if (action === 'rename') renameProject(pid);
         else if (action === 'delete') deleteProject(pid);
       });
@@ -580,6 +611,103 @@ function deleteProject(pid) {
   var proj=data.projects[pid]; if(!proj) return;
   if(!confirm('「'+proj.name+'」を削除しますか？この操作は取り消せません。')) return;
   delete data.projects[pid]; save(); renderProjectsList(); updateUI();
+}
+
+// ── 記録編集モーダル ────────────────────────────────────
+var editingPid = null;
+var editInputs = {}; // { "YYYY-MM-DD": { cat: inputEl } }
+
+function openEditModal(pid) {
+  var proj = data.projects[pid];
+  if (!proj) return;
+  editingPid = pid;
+  editInputs = {};
+  document.getElementById('edit-modal-title').textContent = '「' + proj.name + '」の記録を編集';
+
+  var container = document.getElementById('edit-day-list');
+  container.innerHTML = '';
+
+  var days = Object.keys(proj.days).sort().reverse();
+  if (!days.length) {
+    container.innerHTML = '<div style="color:var(--text-sub);font-size:0.85rem;padding:16px 0;">記録がありません</div>';
+  } else {
+    days.forEach(function(dk) {
+      var day = proj.days[dk];
+      var bc = day.byCategory || {};
+      var row = document.createElement('div');
+      row.className = 'edit-day-row';
+      var catWrap = document.createElement('div');
+      catWrap.className = 'edit-cat-row';
+      editInputs[dk] = {};
+
+      data.categories.forEach(function(cat) {
+        var wrap = document.createElement('div');
+        wrap.className = 'edit-cat-input-wrap';
+        var lbl = document.createElement('span');
+        lbl.className = 'edit-cat-label';
+        lbl.textContent = cat + ':';
+        var inp = document.createElement('input');
+        inp.type = 'number';
+        inp.className = 'edit-cat-input';
+        inp.min = '0';
+        inp.value = bc[cat] ? (bc[cat].sessions || 0) : 0;
+        wrap.appendChild(lbl);
+        wrap.appendChild(inp);
+        catWrap.appendChild(wrap);
+        editInputs[dk][cat] = inp;
+      });
+
+      var dateLabel = document.createElement('div');
+      dateLabel.className = 'edit-day-label';
+      dateLabel.textContent = dk;
+      row.appendChild(dateLabel);
+      row.appendChild(catWrap);
+      container.appendChild(row);
+    });
+  }
+
+  document.getElementById('edit-modal-overlay').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('active');
+  editingPid = null;
+  editInputs = {};
+}
+
+function saveEditModal() {
+  var proj = data.projects[editingPid];
+  if (!proj) return;
+
+  for (var dk in editInputs) {
+    if (!proj.days[dk]) proj.days[dk] = { sessions: 0, chars: 0, byCategory: {} };
+    var day = proj.days[dk];
+    if (!day.byCategory) day.byCategory = {};
+
+    var totalSessions = 0;
+    var totalChars = 0;
+    data.categories.forEach(function(cat) {
+      var inp = editInputs[dk][cat];
+      var val = Math.max(0, parseInt(inp.value) || 0);
+      if (!day.byCategory[cat]) day.byCategory[cat] = { sessions: 0, chars: 0 };
+      day.byCategory[cat].sessions = val;
+      // 執筆以外は文字数0のまま
+      if (cat !== WRITING_CATEGORY) day.byCategory[cat].chars = 0;
+      totalSessions += val;
+      totalChars += day.byCategory[cat].chars || 0;
+    });
+    // top-levelも更新
+    day.sessions = totalSessions;
+    day.chars = totalChars;
+
+    // 全部0なら記録ごと削除
+    if (totalSessions === 0) delete proj.days[dk];
+  }
+
+  save();
+  updateUI();
+  closeEditModal();
+  renderProjectsList();
 }
 
 // ── Category management ─────────────────────────────────
