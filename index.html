@@ -291,6 +291,7 @@ function defaultData() {
     settings: { focus: 20, break: 5 },
     categories: DEFAULT_CATEGORIES.slice(),
     activeProjectId: id,
+    deletedProjectIds: [],
     projects: { [id]: { id: id, name: 'Project 1', createdAt: todayKey(), days: {} } }
   };
 }
@@ -298,7 +299,7 @@ function defaultData() {
 function loadData() {
   try {
     var raw = localStorage.getItem(STORE_KEY);
-    if (raw) { var d = JSON.parse(raw); if (!d.categories) d.categories = DEFAULT_CATEGORIES.slice(); return d; }
+    if (raw) { var d = JSON.parse(raw); if (!d.categories) d.categories = DEFAULT_CATEGORIES.slice(); if (!d.deletedProjectIds) d.deletedProjectIds = []; return d; }
     var oldRaw = localStorage.getItem('pomowriters_v12');
     if (oldRaw) {
       var old = JSON.parse(oldRaw);
@@ -611,6 +612,8 @@ function deleteProject(pid) {
   if(pid===data.activeProjectId){ alert('現在使用中のプロジェクトは削除できません。'); return; }
   var proj=data.projects[pid]; if(!proj) return;
   if(!confirm('「'+proj.name+'」を削除しますか？この操作は取り消せません。')) return;
+  if (!data.deletedProjectIds) data.deletedProjectIds = [];
+  data.deletedProjectIds.push(pid);
   delete data.projects[pid]; save(); renderProjectsList(); updateUI();
 }
 
@@ -1042,6 +1045,16 @@ function mergeData(base, sub) {
   if (!sub) return base;
   var merged = JSON.parse(JSON.stringify(base));
 
+  // deletedProjectIds: 両方をマージ
+  if (!merged.deletedProjectIds) merged.deletedProjectIds = [];
+  if (sub.deletedProjectIds) {
+    sub.deletedProjectIds.forEach(function(id) {
+      if (merged.deletedProjectIds.indexOf(id) === -1) merged.deletedProjectIds.push(id);
+    });
+  }
+  // 削除済みIDをmerged.projectsからも除去
+  merged.deletedProjectIds.forEach(function(id) { delete merged.projects[id]; });
+
   // categories: 両方をマージ
   if (sub.categories) {
     sub.categories.forEach(function(cat) {
@@ -1052,6 +1065,7 @@ function mergeData(base, sub) {
   // projects: subにしかないプロジェクトを追加、共通プロジェクトは日別データのみ補完
   if (sub.projects) {
     for (var pid in sub.projects) {
+      if (merged.deletedProjectIds.indexOf(pid) !== -1) continue;
       if (!merged.projects[pid]) {
         merged.projects[pid] = sub.projects[pid];
       } else {
