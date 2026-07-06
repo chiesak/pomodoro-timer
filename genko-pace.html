@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原稿ペース帳</title>
+<style>
+  :root{
+    --paper:#F7F5EF;
+    --ink:#1F1F1D;
+    --ink-soft:#5A5751;
+    --shu:#C73E3A;        /* 朱 */
+    --shu-pale:#E8C6C2;   /* 薄朱(罫線) */
+    --shu-wash:#F4E9E6;
+    --line:#DDD8CC;
+    --ok:#3A6B4F;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    font-size:15px;
+    line-height:1.7;
+    padding:2rem 1rem 4rem;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  h1{
+    font-family:"Hiragino Mincho ProN","Yu Mincho","MS Mincho",serif;
+    font-weight:600;
+    font-size:1.7rem;
+    letter-spacing:.35em;
+    text-align:center;
+    margin-bottom:.2rem;
+  }
+  .subtitle{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:.8rem;
+    letter-spacing:.15em;
+    margin-bottom:2rem;
+  }
+  .card{
+    background:#FFFFFF;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:1.2rem 1.4rem;
+    margin-bottom:1.2rem;
+  }
+  .card h2{
+    font-size:.85rem;
+    font-weight:600;
+    letter-spacing:.2em;
+    color:var(--shu);
+    border-left:3px solid var(--shu);
+    padding-left:.6rem;
+    margin-bottom:1rem;
+  }
+  label{display:block;font-size:.8rem;color:var(--ink-soft);margin-bottom:.2rem;}
+  input[type=number],input[type=date],textarea{
+    width:100%;
+    padding:.5rem .6rem;
+    font-size:1rem;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:4.2em;font-size:.95rem;}
+  input:focus,textarea:focus{outline:2px solid var(--shu);outline-offset:1px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;}
+  @media(max-width:520px){.grid2{grid-template-columns:1fr;}}
+  button{
+    font-family:inherit;
+    font-size:.9rem;
+    padding:.55rem 1.2rem;
+    border:1px solid var(--shu);
+    border-radius:var(--radius);
+    background:var(--shu);
+    color:#fff;
+    cursor:pointer;
+    letter-spacing:.1em;
+  }
+  button:hover{background:#A93330;}
+  button.ghost{background:transparent;color:var(--shu);}
+  button.ghost:hover{background:var(--shu-wash);}
+  button:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
+
+  /* 数値サマリー */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;text-align:center;}
+  @media(max-width:520px){.stats{grid-template-columns:repeat(2,1fr);}}
+  .stat .num{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:1.5rem;
+    font-weight:600;
+    line-height:1.3;
+  }
+  .stat .unit{font-size:.75rem;color:var(--ink-soft);}
+  .stat .lbl{font-size:.72rem;color:var(--ink-soft);letter-spacing:.1em;margin-top:.1rem;}
+  .stat.today .num{color:var(--shu);font-size:1.9rem;}
+
+  .pace-note{
+    text-align:center;
+    font-size:.85rem;
+    margin-top:.9rem;
+    padding:.5rem;
+    border-radius:var(--radius);
+  }
+  .pace-note.ahead{background:#EAF2EC;color:var(--ok);}
+  .pace-note.behind{background:var(--shu-wash);color:var(--shu);}
+
+  /* 原稿用紙グリッド */
+  .genko{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(14px,1fr));
+    gap:2px;
+    margin-top:.4rem;
+  }
+  .masu{
+    aspect-ratio:1;
+    border:1px solid var(--shu-pale);
+    border-radius:1px;
+    background:#fff;
+  }
+  .masu.full{background:var(--ink);border-color:var(--ink);}
+  .masu.part{background:var(--shu);border-color:var(--shu);}
+  .genko-caption{font-size:.75rem;color:var(--ink-soft);margin-top:.5rem;text-align:right;}
+
+  /* グラフ */
+  .chart-box{width:100%;overflow:hidden;}
+  .chart-box svg{width:100%;height:auto;display:block;}
+  .chart-legend{font-size:.75rem;color:var(--ink-soft);margin-top:.4rem;text-align:right;}
+  .legend-ink{color:var(--ink);}
+  .legend-shu{color:var(--shu);}
+
+  /* 履歴 */
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th,td{padding:.45rem .3rem;border-bottom:1px solid var(--line);text-align:right;vertical-align:top;}
+  th{font-weight:600;color:var(--ink-soft);font-size:.75rem;letter-spacing:.1em;}
+  th:first-child,td:first-child{text-align:left;white-space:nowrap;}
+  td.memo{text-align:left;font-size:.82rem;color:var(--ink-soft);max-width:16em;}
+  td button.del,td button.edit{
+    border:none;background:none;color:var(--ink-soft);
+    font-size:.8rem;padding:.1rem .3rem;cursor:pointer;white-space:nowrap;
+  }
+  td button.del:hover,td button.edit:hover{color:var(--shu);background:none;}
+
+  .io-row{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:.6rem;}
+  .notice{
+    background:var(--shu-wash);
+    border:1px solid var(--shu-pale);
+    border-radius:var(--radius);
+    padding:.7rem 1rem;
+    font-size:.82rem;
+    margin-bottom:1.2rem;
+    display:none;
+  }
+  .footnote{font-size:.75rem;color:var(--ink-soft);margin-top:.6rem;}
+  @media (prefers-reduced-motion:no-preference){
+    .masu{transition:background .3s;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>原稿ペース帳</h1>
+  <p class="subtitle">— 一日一枚、積みて成る —</p>
+
+  <div class="notice" id="storageNotice">
+    ⚠ この環境ではデータを保存できません（プレビュー表示中の可能性があります）。ファイルをダウンロードしてブラウザで開くか、ご自身のサイトに置いてお使いください。データはこのブラウザの中だけに保存され、外部には一切送信されません。
+  </div>
+
+  <!-- 設定 -->
+  <div class="card">
+    <h2>目 標</h2>
+    <div class="grid2">
+      <div>
+        <label for="goalChars">目標文字数</label>
+        <input type="number" id="goalChars" min="1" step="1000" placeholder="例: 120000">
+      </div>
+      <div>
+        <label for="deadline">目標日（締切）</label>
+        <input type="date" id="deadline">
+      </div>
+    </div>
+    <div style="margin-top:.9rem;">
+      <button id="saveGoal">目標を保存</button>
+    </div>
+  </div>
+
+  <!-- サマリー -->
+  <div class="card" id="summaryCard" style="display:none;">
+    <h2>現 況</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="num" id="statTotal">0</div>
+        <div class="unit">字（累計）</div>
+        <div class="lbl">進捗 <span id="statPct">0</span>%</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="statRemain">0</div>
+        <div class="unit">字（残り）</div>
+        <div class="lbl">目標まで</div>
+      </div>
+      <div class="stat">
+        <div class="num" id="statDays">0</div>
+        <div class="unit">日</div>
+        <div class="lbl">締切まで</div>
+      </div>
+      <div class="stat today">
+        <div class="num" id="statDaily">0</div>
+        <div class="unit">字／日</div>
+        <div class="lbl">今日からの必要ペース</div>
+      </div>
+    </div>
+    <div class="pace-note" id="paceNote" style="display:none;"></div>
+  </div>
+
+  <!-- 入力 -->
+  <div class="card">
+    <h2>今日の執筆</h2>
+    <div class="grid2">
+      <div>
+        <label for="entryDate">日付</label>
+        <input type="date" id="entryDate">
+      </div>
+      <div>
+        <label for="entryChars">書いた文字数</label>
+        <input type="number" id="entryChars" step="100" placeholder="例: 1200">
+      </div>
+    </div>
+    <div style="margin-top:.9rem;">
+      <label for="entryMemo">今日のふり返り</label>
+      <textarea id="entryMemo" placeholder="進んだこと・つまずいたこと・明日の書き出しなど"></textarea>
+    </div>
+    <div style="margin-top:.9rem;">
+      <button id="addEntry">記録する</button>
+    </div>
+    <p class="footnote">推敲で減った日はマイナスの数値も入力できます。同じ日付に再度記録すると文字数は合算され、ふり返りは追記されます。</p>
+  </div>
+
+  <!-- グラフ -->
+  <div class="card" id="chartCard" style="display:none;">
+    <h2>執筆の推移</h2>
+    <div class="chart-box" id="chartBox"></div>
+    <div class="chart-legend">
+      <span class="legend-ink">━ 実際の累計</span>　
+      <span class="legend-shu">╌ 目標ペース</span>
+    </div>
+  </div>
+
+  <!-- 原稿用紙 -->
+  <div class="card" id="genkoCard" style="display:none;">
+    <h2>原稿用紙</h2>
+    <div class="genko" id="genkoGrid" aria-hidden="true"></div>
+    <div class="genko-caption" id="genkoCaption"></div>
+  </div>
+
+  <!-- 履歴 -->
+  <div class="card" id="historyCard" style="display:none;">
+    <h2>記 録</h2>
+    <table>
+      <thead>
+        <tr><th>日付</th><th>文字数</th><th>累計</th><th style="text-align:left;">ふり返り</th><th></th></tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+    <div class="io-row">
+      <button class="ghost" id="csvBtn">グラフ用に書き出す (CSV)</button>
+      <button class="ghost" id="exportBtn">バックアップ (JSON)</button>
+      <button class="ghost" id="importBtn">読み込む</button>
+      <input type="file" id="importFile" accept=".json" style="display:none;">
+    </div>
+    <p class="footnote">CSVはExcelやNumbersでそのまま開けます（日付・文字数・累計・原稿用紙換算・ふり返りの5列）。すべてのデータはこの端末のブラウザ内にのみ保存されます。時々バックアップの書き出しをおすすめします。</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const KEY = 'genko-pace-v1';
+  const SHEET = 400; // 原稿用紙1枚 = 400字
+
+  // ---- ストレージ（使えない環境ではメモリに退避） ----
+  let memoryStore = null;
+  function storageAvailable(){
+    try{
+      localStorage.setItem('__t','1'); localStorage.removeItem('__t');
+      return true;
+    }catch(e){ return false; }
+  }
+  const canStore = storageAvailable();
+  if(!canStore){ document.getElementById('storageNotice').style.display = 'block'; }
+
+  function load(){
+    if(!canStore) return memoryStore || {goal:null, deadline:null, entries:[]};
+    try{
+      const raw = localStorage.getItem(KEY);
+      const data = raw ? JSON.parse(raw) : {goal:null, deadline:null, entries:[]};
+      // 旧バージョンのデータ（memoなし）にも対応
+      data.entries = (data.entries || []).map(function(e){
+        return {date: e.date, chars: e.chars, memo: e.memo || ''};
+      });
+      return data;
+    }catch(e){ return {goal:null, deadline:null, entries:[]}; }
+  }
+  function save(data){
+    if(!canStore){ memoryStore = data; return; }
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+
+  let state = load();
+
+  // ---- ユーティリティ ----
+  const $ = function(id){ return document.getElementById(id); };
+  const fmt = function(n){ return n.toLocaleString('ja-JP'); };
+  function todayStr(){
+    const d = new Date();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+  function daysUntil(dateStr){
+    const today = new Date(todayStr() + 'T00:00:00');
+    const target = new Date(dateStr + 'T00:00:00');
+    return Math.round((target - today) / 86400000);
+  }
+  function sortedEntries(){
+    return state.entries.slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+  }
+
+  // ---- グラフ（SVG・外部ライブラリなし） ----
+  function renderChart(entries){
+    const box = $('chartBox');
+    if(!state.goal || !state.deadline || entries.length < 2){
+      $('chartCard').style.display = 'none';
+      return;
+    }
+    $('chartCard').style.display = 'block';
+
+    const W = 680, H = 300, padL = 60, padR = 16, padT = 14, padB = 34;
+    const startD = new Date(entries[0].date + 'T00:00:00');
+    const endD = new Date(state.deadline + 'T00:00:00');
+    const lastD = new Date(entries[entries.length-1].date + 'T00:00:00');
+    const maxD = endD > lastD ? endD : lastD;
+    const spanMs = Math.max(maxD - startD, 86400000);
+
+    let cum = 0;
+    const pts = entries.map(function(e){
+      cum += e.chars;
+      const d = new Date(e.date + 'T00:00:00');
+      return {x: (d - startD) / spanMs, y: cum};
+    });
+    const maxY = Math.max(state.goal, cum) * 1.05;
+
+    function X(x){ return padL + x * (W - padL - padR); }
+    function Y(y){ return H - padB - (y / maxY) * (H - padT - padB); }
+
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="累計文字数の推移グラフ">';
+
+    // 横グリッド線と目盛り（4分割）
+    for(let i=0; i<=4; i++){
+      const v = Math.round(maxY * i / 4);
+      const y = Y(v);
+      svg += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W-padR) + '" y2="' + y + '" stroke="#DDD8CC" stroke-width="1"/>';
+      svg += '<text x="' + (padL-6) + '" y="' + (y+4) + '" text-anchor="end" font-size="11" fill="#5A5751">' + fmt(v) + '</text>';
+    }
+    // 横軸ラベル（開始日・締切）
+    svg += '<text x="' + padL + '" y="' + (H-10) + '" font-size="11" fill="#5A5751">' + entries[0].date + '</text>';
+    svg += '<text x="' + (W-padR) + '" y="' + (H-10) + '" text-anchor="end" font-size="11" fill="#5A5751">' + state.deadline + '（締切）</text>';
+
+    // 目標ペース線（開始日0字 → 締切に目標到達）
+    const gx = (endD - startD) / spanMs;
+    svg += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(gx) + '" y2="' + Y(state.goal) + '" stroke="#C73E3A" stroke-width="1.5" stroke-dasharray="5,5"/>';
+    // 目標文字数の水平線
+    svg += '<line x1="' + padL + '" y1="' + Y(state.goal) + '" x2="' + (W-padR) + '" y2="' + Y(state.goal) + '" stroke="#E8C6C2" stroke-width="1"/>';
+
+    // 実績の折れ線
+    let path = '';
+    pts.forEach(function(p, i){
+      path += (i === 0 ? 'M' : 'L') + X(p.x).toFixed(1) + ',' + Y(p.y).toFixed(1);
+    });
+    svg += '<path d="' + path + '" fill="none" stroke="#1F1F1D" stroke-width="2"/>';
+    pts.forEach(function(p){
+      svg += '<circle cx="' + X(p.x).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="3" fill="#1F1F1D"/>';
+    });
+
+    svg += '</svg>';
+    box.innerHTML = svg;
+  }
+
+  // ---- 描画 ----
+  function render(){
+    if(state.goal) $('goalChars').value = state.goal;
+    if(state.deadline) $('deadline').value = state.deadline;
+    if(!$('entryDate').value) $('entryDate').value = todayStr();
+
+    const entries = sortedEntries();
+    const total = entries.reduce(function(s,e){ return s + e.chars; }, 0);
+
+    // サマリー
+    if(state.goal && state.deadline){
+      $('summaryCard').style.display = 'block';
+      const remain = Math.max(state.goal - total, 0);
+      const days = daysUntil(state.deadline);
+      const daysLeft = Math.max(days, 0) + 1; // 今日を含める
+      const daily = remain > 0 ? Math.ceil(remain / daysLeft) : 0;
+      const pct = Math.min(100, Math.round(total / state.goal * 1000) / 10);
+
+      $('statTotal').textContent = fmt(total);
+      $('statPct').textContent = pct;
+      $('statRemain').textContent = fmt(remain);
+      $('statDays').textContent = days >= 0 ? fmt(days) : '締切超過';
+      $('statDaily').textContent = fmt(daily);
+
+      const note = $('paceNote');
+      if(entries.length > 0 && days >= 0){
+        const start = new Date(entries[0].date + 'T00:00:00');
+        const end = new Date(state.deadline + 'T00:00:00');
+        const now = new Date(todayStr() + 'T00:00:00');
+        const totalDays = Math.max(Math.round((end - start)/86400000) + 1, 1);
+        const elapsed = Math.min(Math.max(Math.round((now - start)/86400000) + 1, 1), totalDays);
+        const expected = Math.round(state.goal * elapsed / totalDays);
+        const diff = total - expected;
+        note.style.display = 'block';
+        if(diff >= 0){
+          note.className = 'pace-note ahead';
+          note.textContent = '予定より ' + fmt(diff) + ' 字 先行しています（原稿用紙 約' + fmt(Math.round(diff/SHEET)) + '枚分）';
+        }else{
+          note.className = 'pace-note behind';
+          note.textContent = '予定より ' + fmt(-diff) + ' 字 遅れています（原稿用紙 約' + fmt(Math.round(-diff/SHEET)) + '枚分）';
+        }
+      }else{
+        note.style.display = 'none';
+      }
+    }else{
+      $('summaryCard').style.display = 'none';
+    }
+
+    // グラフ
+    renderChart(entries);
+
+    // 原稿用紙グリッド
+    if(state.goal){
+      $('genkoCard').style.display = 'block';
+      const grid = $('genkoGrid');
+      grid.innerHTML = '';
+      const totalSheets = Math.ceil(state.goal / SHEET);
+      let perCell = 1;
+      while(totalSheets / perCell > 400) perCell *= 2;
+      const cells = Math.ceil(totalSheets / perCell);
+      const doneSheets = total / SHEET;
+      const frag = document.createDocumentFragment();
+      for(let i=0; i<cells; i++){
+        const div = document.createElement('div');
+        const cellStart = i * perCell;
+        const cellEnd = (i+1) * perCell;
+        div.className = 'masu' + (doneSheets >= cellEnd ? ' full' : (doneSheets > cellStart ? ' part' : ''));
+        frag.appendChild(div);
+      }
+      grid.appendChild(frag);
+      const doneStr = fmt(Math.floor(doneSheets*10)/10);
+      $('genkoCaption').textContent = '400字詰め原稿用紙 ' + doneStr + ' 枚 ／ ' + fmt(totalSheets) + ' 枚'
+        + (perCell > 1 ? '（1マス = ' + perCell + '枚）' : '');
+    }else{
+      $('genkoCard').style.display = 'none';
+    }
+
+    // 履歴
+    if(entries.length > 0){
+      $('historyCard').style.display = 'block';
+      const tbody = $('historyBody');
+      tbody.innerHTML = '';
+      let cum = 0;
+      const rows = [];
+      for(const e of entries){
+        cum += e.chars;
+        rows.push({date:e.date, chars:e.chars, cum:cum, memo:e.memo || ''});
+      }
+      rows.reverse(); // 新しい日付を上に
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        const tdD = document.createElement('td'); tdD.textContent = r.date;
+        const tdC = document.createElement('td'); tdC.textContent = fmt(r.chars);
+        const tdS = document.createElement('td'); tdS.textContent = fmt(r.cum);
+        const tdM = document.createElement('td'); tdM.className = 'memo'; tdM.textContent = r.memo;
+        const tdX = document.createElement('td');
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit'; editBtn.textContent = '編集';
+        editBtn.addEventListener('click', function(){
+          const entry = state.entries.find(function(e){ return e.date === r.date; });
+          if(!entry) return;
+          const newChars = prompt(r.date + ' の文字数を修正:', entry.chars);
+          if(newChars === null) return;
+          const n = parseInt(newChars, 10);
+          if(isNaN(n)){ alert('数値を入力してください。'); return; }
+          const newMemo = prompt('ふり返りを修正:', entry.memo || '');
+          if(newMemo !== null) entry.memo = newMemo;
+          entry.chars = n;
+          save(state); render();
+        });
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del'; delBtn.textContent = '削除';
+        delBtn.addEventListener('click', function(){
+          if(confirm(r.date + ' の記録を削除しますか？')){
+            state.entries = state.entries.filter(function(e){ return e.date !== r.date; });
+            save(state); render();
+          }
+        });
+
+        tdX.appendChild(editBtn);
+        tdX.appendChild(delBtn);
+        tr.append(tdD, tdC, tdS, tdM, tdX);
+        tbody.appendChild(tr);
+      }
+    }else{
+      $('historyCard').style.display = state.goal ? 'block' : 'none';
+      $('historyBody').innerHTML = '';
+    }
+  }
+
+  // ---- イベント ----
+  $('saveGoal').addEventListener('click', function(){
+    const goal = parseInt($('goalChars').value, 10);
+    const deadline = $('deadline').value;
+    if(!goal || goal <= 0){ alert('目標文字数を入力してください。'); return; }
+    if(!deadline){ alert('目標日を入力してください。'); return; }
+    state.goal = goal;
+    state.deadline = deadline;
+    save(state); render();
+  });
+
+  $('addEntry').addEventListener('click', function(){
+    const date = $('entryDate').value;
+    const chars = parseInt($('entryChars').value, 10);
+    const memo = $('entryMemo').value.trim();
+    if(!date){ alert('日付を入力してください。'); return; }
+    if(isNaN(chars)){ alert('文字数を入力してください。'); return; }
+    const existing = state.entries.find(function(e){ return e.date === date; });
+    if(existing){
+      existing.chars += chars;
+      if(memo){ existing.memo = existing.memo ? existing.memo + ' ／ ' + memo : memo; }
+    }else{
+      state.entries.push({date: date, chars: chars, memo: memo});
+    }
+    save(state);
+    $('entryChars').value = '';
+    $('entryMemo').value = '';
+    render();
+  });
+  $('entryChars').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') $('addEntry').click();
+  });
+
+  // ---- CSV書き出し（Excel対応: BOM付きUTF-8） ----
+  function csvEscape(s){
+    s = String(s);
+    if(s.indexOf('"') >= 0 || s.indexOf(',') >= 0 || s.indexOf('\n') >= 0){
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+  $('csvBtn').addEventListener('click', function(){
+    const entries = sortedEntries();
+    if(entries.length === 0){ alert('まだ記録がありません。'); return; }
+    let cum = 0;
+    const lines = ['日付,文字数,累計文字数,原稿用紙換算(枚),ふり返り'];
+    for(const e of entries){
+      cum += e.chars;
+      lines.push([
+        e.date,
+        e.chars,
+        cum,
+        (Math.round(cum / SHEET * 10) / 10),
+        csvEscape(e.memo || '')
+      ].join(','));
+    }
+    const blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'genko-pace-' + todayStr() + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $('exportBtn').addEventListener('click', function(){
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'genko-pace-backup-' + todayStr() + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $('importBtn').addEventListener('click', function(){ $('importFile').click(); });
+  $('importFile').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(){
+      try{
+        const data = JSON.parse(reader.result);
+        if(typeof data !== 'object' || !Array.isArray(data.entries)) throw new Error();
+        data.entries = data.entries.map(function(en){
+          return {date: en.date, chars: en.chars, memo: en.memo || ''};
+        });
+        state = data;
+        save(state); render();
+        alert('バックアップを読み込みました。');
+      }catch(err){
+        alert('ファイルを読み込めませんでした。書き出したJSONファイルを選択してください。');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
