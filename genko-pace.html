@@ -184,10 +184,15 @@
         <label for="deadline">目標日（締切）</label>
         <input type="date" id="deadline">
       </div>
+      <div>
+        <label for="initialChars">これまでに書いた文字数（任意）</label>
+        <input type="number" id="initialChars" min="0" step="1000" placeholder="例: 30000">
+      </div>
     </div>
     <div style="margin-top:.9rem;">
       <button id="saveGoal">目標を保存</button>
     </div>
+    <p class="footnote">途中まで書いた原稿から使い始める場合は「これまでに書いた文字数」を入れてください。累計・進捗・必要ペースに反映されます。</p>
   </div>
 
   <!-- サマリー -->
@@ -294,16 +299,17 @@
   if(!canStore){ document.getElementById('storageNotice').style.display = 'block'; }
 
   function load(){
-    if(!canStore) return memoryStore || {goal:null, deadline:null, entries:[]};
+    if(!canStore) return memoryStore || {goal:null, deadline:null, initial:0, entries:[]};
     try{
       const raw = localStorage.getItem(KEY);
-      const data = raw ? JSON.parse(raw) : {goal:null, deadline:null, entries:[]};
-      // 旧バージョンのデータ（memoなし）にも対応
+      const data = raw ? JSON.parse(raw) : {goal:null, deadline:null, initial:0, entries:[]};
+      // 旧バージョンのデータ（memo・initialなし）にも対応
+      data.initial = data.initial || 0;
       data.entries = (data.entries || []).map(function(e){
         return {date: e.date, chars: e.chars, memo: e.memo || ''};
       });
       return data;
-    }catch(e){ return {goal:null, deadline:null, entries:[]}; }
+    }catch(e){ return {goal:null, deadline:null, initial:0, entries:[]}; }
   }
   function save(data){
     if(!canStore){ memoryStore = data; return; }
@@ -346,7 +352,7 @@
     const maxD = endD > lastD ? endD : lastD;
     const spanMs = Math.max(maxD - startD, 86400000);
 
-    let cum = 0;
+    let cum = state.initial || 0;
     const pts = entries.map(function(e){
       cum += e.chars;
       const d = new Date(e.date + 'T00:00:00');
@@ -372,7 +378,7 @@
 
     // 目標ペース線（開始日0字 → 締切に目標到達）
     const gx = (endD - startD) / spanMs;
-    svg += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(gx) + '" y2="' + Y(state.goal) + '" stroke="#C73E3A" stroke-width="1.5" stroke-dasharray="5,5"/>';
+    svg += '<line x1="' + X(0) + '" y1="' + Y(state.initial || 0) + '" x2="' + X(gx) + '" y2="' + Y(state.goal) + '" stroke="#C73E3A" stroke-width="1.5" stroke-dasharray="5,5"/>';
     // 目標文字数の水平線
     svg += '<line x1="' + padL + '" y1="' + Y(state.goal) + '" x2="' + (W-padR) + '" y2="' + Y(state.goal) + '" stroke="#E8C6C2" stroke-width="1"/>';
 
@@ -394,10 +400,11 @@
   function render(){
     if(state.goal) $('goalChars').value = state.goal;
     if(state.deadline) $('deadline').value = state.deadline;
+    if(state.initial) $('initialChars').value = state.initial;
     if(!$('entryDate').value) $('entryDate').value = todayStr();
 
     const entries = sortedEntries();
-    const total = entries.reduce(function(s,e){ return s + e.chars; }, 0);
+    const total = entries.reduce(function(s,e){ return s + e.chars; }, state.initial || 0);
 
     // サマリー
     if(state.goal && state.deadline){
@@ -421,7 +428,8 @@
         const now = new Date(todayStr() + 'T00:00:00');
         const totalDays = Math.max(Math.round((end - start)/86400000) + 1, 1);
         const elapsed = Math.min(Math.max(Math.round((now - start)/86400000) + 1, 1), totalDays);
-        const expected = Math.round(state.goal * elapsed / totalDays);
+        const init = state.initial || 0;
+        const expected = Math.round(init + (state.goal - init) * elapsed / totalDays);
         const diff = total - expected;
         note.style.display = 'block';
         if(diff >= 0){
@@ -472,7 +480,7 @@
       $('historyCard').style.display = 'block';
       const tbody = $('historyBody');
       tbody.innerHTML = '';
-      let cum = 0;
+      let cum = state.initial || 0;
       const rows = [];
       for(const e of entries){
         cum += e.chars;
@@ -528,6 +536,9 @@
     const deadline = $('deadline').value;
     if(!goal || goal <= 0){ alert('目標文字数を入力してください。'); return; }
     if(!deadline){ alert('目標日を入力してください。'); return; }
+    const initial = parseInt($('initialChars').value, 10);
+    state.initial = (!isNaN(initial) && initial > 0) ? initial : 0;
+    if(state.initial >= goal){ alert('「これまでに書いた文字数」が目標文字数以上になっています。'); return; }
     state.goal = goal;
     state.deadline = deadline;
     save(state); render();
@@ -566,8 +577,11 @@
   $('csvBtn').addEventListener('click', function(){
     const entries = sortedEntries();
     if(entries.length === 0){ alert('まだ記録がありません。'); return; }
-    let cum = 0;
+    let cum = state.initial || 0;
     const lines = ['日付,文字数,累計文字数,原稿用紙換算(枚),ふり返り'];
+    if(cum > 0){
+      lines.push([entries[0].date, 0, cum, (Math.round(cum / SHEET * 10) / 10), '開始時点（記録開始前に書いた分）'].join(','));
+    }
     for(const e of entries){
       cum += e.chars;
       lines.push([
@@ -604,6 +618,7 @@
       try{
         const data = JSON.parse(reader.result);
         if(typeof data !== 'object' || !Array.isArray(data.entries)) throw new Error();
+        data.initial = data.initial || 0;
         data.entries = data.entries.map(function(en){
           return {date: en.date, chars: en.chars, memo: en.memo || ''};
         });
